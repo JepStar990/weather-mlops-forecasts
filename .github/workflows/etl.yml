@@ -20,6 +20,6 @@ jobs:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           VISUAL_CROSSING_API_KEY: ${{ secrets.VISUAL_CROSSING_API_KEY }}
           MET_NO_USER_AGENT: ${{ secrets.MET_NO_USER_AGENT }}
-                   NWS_USER_AGENT: ${{ secrets.NWS_USER_AGENT }}
+          NWS_USER_AGENT: ${{ secrets.NWS_USER_AGENT }}
           TARGET_LOCATIONS: ${{ vars.TARGET_LOCATIONS }}
           VARIABLES: ${{ vars.VARIABLES }}
