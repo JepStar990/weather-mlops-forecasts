@@ -81,3 +81,4 @@ defdef main():
         logger.warning("No models trained")
 
 if __name__ == "__main__":
+    main()

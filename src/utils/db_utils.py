@@ -34,4 +34,5 @@ def insert_dataframe(df: pd.DataFrame, table: str, dtype: Mapping | None = None,
     logger.info("Inserted %d rows into %s", len(df), table)
     return len(df)
 
-defdef fetch_df(sql: str, params: Mapping | None = None) -> pd.DataFrame:
+def fetch_df(sql: str, params: Mapping | None = None) -> pd.DataFrame:
+    return pd.read_sql(text(sql), con=get_engine(), params=params or {})

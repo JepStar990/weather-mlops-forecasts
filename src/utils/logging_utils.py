@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-def get_logger(name: str) -> logging.Loggerdef get_logger(name: str) -> logging.Logger:
+def get_logger(name: str) -> logging.Logger:
     level = os.getenv("LOG_LEVEL", "INFO").upper()
     logger = logging.getLogger(name)
     if logger.handlers:
@@ -16,3 +16,4 @@ def get_logger(name: str) -> logging.Loggerdef get_logger(name: str) -> logging.
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.propagate = False
+    return logger

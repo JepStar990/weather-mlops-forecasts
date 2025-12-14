@@ -46,3 +46,4 @@ def main():
         logger.info("No automatic promotion performed in this pass.")
 
 if __name__ == "__main__":
+    main()

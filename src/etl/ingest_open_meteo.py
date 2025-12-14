@@ -64,4 +64,5 @@ def main():
     df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     insert_dataframe(df, "forecasts")
 
-ifif __name__ == "__main__":
+if __name__ == "__main__":
+    main()

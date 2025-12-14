@@ -1,6 +1,6 @@
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,11 +15,11 @@ class Config:
 
     DAGSHUB_USERNAME: str = os.getenv("DAGSHUB_USERNAME", "")
     DAGSHUB_TOKEN: str = os.getenv("DAGSHUB_TOKEN", "")
-    PUBLIC_RE    PUBLIC_REPO_NAME: str = os.getenv("PUBLIC_REPO_NAME", "weather-mlops-forecasts")
+    PUBLIC_REPO_NAME: str = os.getenv("PUBLIC_REPO_NAME", "weather-mlops-forecasts")
 
-    TARGET_LOCATIONS: list = json.loads(os.getenv("TARGET_LOCATIONS", "[]"))
-    VARIABLES: list = json.loads(os.getenv("VARIABLES", '["temp_2m","wind_speed_10m","precipitation"]'))
-    HORIZONS_HOURS: list = json.loads(os.getenv("HORIZONS_HOURS", "[1,3,6,12,24,48,72]"))
+    TARGET_LOCATIONS: list[dict] = field(default_factory=lambda: json.loads(os.getenv("TARGET_LOCATIONS", "[]")))
+    VARIABLES: list[str] = field(default_factory=lambda: json.loads(os.getenv("VARIABLES", '["temp_2m","wind_speed_10m","precipitation"]')))
+    HORIZONS_HOURS: list[int] = field(default_factory=lambda: json.loads(os.getenv("HORIZONS_HOURS", "[1,3,6,12,24,48,72]")))
 
     LOCAL_TIMEZONE: str = os.getenv("LOCAL_TIMEZONE", "Africa/Johannesburg")
 
@@ -47,3 +47,5 @@ UNIT_MAP = {
 SOURCES = ["open_meteo", "met_no", "openweather", "visual_crossing", "weather_gov", "our_model"]
 
 def clamp_float(x: float, min_v: float = -1e6, max_v: float = 1e6) -> float:
+    """Clamp a float value to a safe range to avoid extreme outliers."""
+    return float(min(max(x, min_v), max_v))

@@ -56,3 +56,4 @@ def main():
     insert_dataframe(df, "observations")
 
 if __name__ == "__main__":
+    main()

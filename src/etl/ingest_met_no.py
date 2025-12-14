@@ -54,3 +54,4 @@ def main():
     insert_dataframe(df, "forecasts")
 
 if __name__ == "__main__":
+    main()
