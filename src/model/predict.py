@@ -53,7 +53,7 @@ def main():
     if not model_item:
         raise RuntimeError(f"No model directory found under run {run_id}")
 
-    loaded = mlflow.pyfunc.load_model(f"runs:/{run_id}/{model
+    loaded = mlflow.pyfunc.load_model(f"runs:/{run_id}/{model_item.path}")
     
     rows = []
     for var in CFG.VARIABLES:
