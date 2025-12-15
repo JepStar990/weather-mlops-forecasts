@@ -137,7 +137,7 @@ def train_one(variable: str, horizon: int):
 
         mlflow.log_artifact(tmp_path, artifact_path="fold_metrics")
         os.unlink(tmp_path)
-        ml_sklearn.log_model(model, artifact_path="model")
+        ml_sklearn.log_model(model, name="model")
         run_id = mlflow.active_run().info.run_id
         logger.info("Trained %s H+%d: RMSE=%.3f MAE=%.3f (run_id=%s)", variable, horizon, rmse, mae, run_id)
         return {"variable": variable, "horizon": horizon, "rmse": rmse, "mae": mae, "run_id": run_id, "features": feat}
