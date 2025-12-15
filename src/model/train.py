@@ -6,6 +6,7 @@ Train per-variable, per-horizon models.
 """
 import os
 import mlflow
+import tempfile
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from mlflow import sklearn as ml_sklearn
@@ -130,7 +131,12 @@ def train_one(variable: str, horizon: int):
         mlflow.log_params({"variable": variable, "horizon": horizon, "algo": algo})
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("mae", mae)
-        mlflow.log_artifact(local_path=dfm.to_csv(index=False), artifact_path="fold_metrics")  # quick artifact
+        with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as tmp:
+            dfm.to_csv(tmp.name, index=False)
+            tmp_path = tmp.name
+
+        mlflow.log_artifact(tmp_path, artifact_path="fold_metrics")
+        os.unlink(tmp_path)
         ml_sklearn.log_model(model, artifact_path="model")
         run_id = mlflow.active_run().info.run_id
         logger.info("Trained %s H+%d: RMSE=%.3f MAE=%.3f (run_id=%s)", variable, horizon, rmse, mae, run_id)
