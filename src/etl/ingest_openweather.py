@@ -22,7 +22,7 @@ def fetch_openweather(lat: float, lon: float, variables: list[str]) -> pd.DataFr
         "units": "metric",
         "exclude": "minutely,daily,alerts,current",
     }
-    data = get_json(CFG.OPENWEATHER_URL, params=params)
+    data = get_json(OPENWEATHER_URL, params=params)
     issue = now_utc()
     rows = []
     for h in data.get("hourly", []):
