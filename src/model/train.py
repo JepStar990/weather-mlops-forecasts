@@ -63,7 +63,7 @@ def train_one(variable: str, horizon: int):
     folds = weekly_folds(Xy)
     if not folds:
         # time-based 80/20 fallback so we can train at least once
-        X    Xy = Xy.sort_values("valid_time")
+        Xy = Xy.sort_values("valid_time")
         split_idx = int(0.8 * len(Xy))
         tr, va = Xy.iloc[:split_idx], Xy.iloc[split_idx:]
         if len(tr) and len(va):
