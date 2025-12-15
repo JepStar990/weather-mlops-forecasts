@@ -54,7 +54,12 @@ def main():
         items = mlflow.tracking.MlflowClient().list_artifacts(run_id)
         if not items:
             raise RuntimeError(f"No artifacts found under run {run_id}")
-        loaded = mlflow.pyfunc.load_model(f"runs:/{run_id}/{items[0].path}")
+
+        # Prefer 'model' folder if present
+        model_item = next((i for i in items if i.path == "model"), None)
+        if not model_item:
+            raise RuntimeError(f"No 'model' artifact found under run {run_id}")
+        loaded = mlflow.pyfunc.load_model(f"runs:/{run_id}/model")
         
     rows = []
     for var in CFG.VARIABLES:
