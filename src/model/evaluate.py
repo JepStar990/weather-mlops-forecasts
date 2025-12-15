@@ -33,4 +33,4 @@ def evaluate_model(model, folds, features, target="y"):
         rmse = mean_squared_error(yv, pred) ** 0.5
         metrics.append({"fold": i, "mae": mae, "rmse": rmse, "n": len(va)})
     dfm = pd.DataFrame(metrics)
-    return dfm, df
+    return dfm, rmse, mae
