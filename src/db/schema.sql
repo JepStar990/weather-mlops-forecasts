@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS forecasts (
   lat DOUBLE PRECISION NOT NULL,
   lon DOUBLE PRECISION NOT NULL,
   variable TEXT NOT NULL,            -- 'temp_2m','wind_speed_10m','precipitation'
-   issue_time TIMESTAMPTZ NOT NULL,   -- when forecast was issued
+  issue_time TIMESTAMPTZ NOT NULL,   -- when forecast was issued
   valid_time TIMESTAMPTZ NOT NULL,   -- target time
   horizon_hours INT NOT NULL,
   value DOUBLE PRECISION NOT NULL,
@@ -48,3 +48,4 @@ CREATE TABLE IF NOT EXISTS models (
   mlflow_run_id TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   is_champion BOOLEAN DEFAULT FALSE
+);
