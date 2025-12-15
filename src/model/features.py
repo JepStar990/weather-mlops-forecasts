@@ -87,13 +87,22 @@ def build_features(variable: str, horizon: int) -> pd.DataFrame:
 
     # ensure proper dtypes & sorting for merge_asof
     # Ensure same dtype/timezone and sort by keys (required for merge_asof with by=)
+
+    X["lat"] = X["lat"].astype(float)
+    X["lon"] = X["lon"].astype(float)
+    ydf["lat"] = ydf["lat"].astype(float)
+    ydf["lon"] = ydf["lon"].astype(float)
+    X = X[X["valid_time"].notna()]
+    ydf = ydf[ydf["obs_time"].notna()]
+    
     X = X.copy()
     X["valid_time"] = pd.to_datetime(X["valid_time"], utc=True)
     X = X.sort_values(["lat", "lon", "valid_time"], kind="mergesort")
 
     ydf = ydf.copy()
     ydf["obs_time"] = pd.to_datetime(ydf["obs_time"], utc=True)
-    ydf = ydf.sort_values(["lat", "lon", "obs_time"], kind="mergesort").rename(columns={"obs_time": "valid_time"})
+    ydf = ydf.rename(columns={"obs_time": "valid_time"})
+    ydf = ydf.sort_values(["lat", "lon", "valid_time"], kind="mergesort")
 
     Xy = pd.merge_asof(
         X, ydf,
