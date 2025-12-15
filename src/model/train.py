@@ -141,7 +141,8 @@ def train_one(variable: str, horizon: int):
         run_id = mlflow.active_run().info.run_id
         
         from datetime import datetime
-        model_name = f"model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        #model_name = f"model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        model_name = "model"
         mlflow.sklearn.log_model(
             sk_model=model,
             artifact_path="model",  # for correct artifact folder
