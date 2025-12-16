@@ -166,7 +166,7 @@ def train_one(variable: str, horizon: int):
         mlflow.sklearn.log_model(
             sk_model=model,
             artifact_path="model",  # for correct artifact folder
-            registered_model_name=model_name
+            registered_model_name=model_name,
             signature=signature,
             input_example=input_example,
         )
