@@ -19,6 +19,7 @@ from src.config import CFG
 from src.model.features import build_features
 from src.model.evaluate import weekly_folds, evaluate_model
 from src.utils.logging_utils import get_logger
+from mlflow.tracking import MlflowClient
 
 logger = get_logger(__name__)
 
