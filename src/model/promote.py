@@ -27,7 +27,7 @@ def better_by(past: float, now: float) -> float:
 def main():
     with db_conn() as conn:
         # For simplicity, use single model name "ensemble"
-        name = "ensemble"
+        name = "model"
         # In a more advanced setup, we'd persist per (variable,horizon) metrics and run_ids in a registry.
         # Here, we just look at the latest two entries (challenger vs champion silhouettes).
         rows = conn.execute(text("SELECT id, mlflow_run_id, created_at FROM models WHERE name=:n ORDER BY id DESC LIMIT 2"), {"n": name}).fetchall()
