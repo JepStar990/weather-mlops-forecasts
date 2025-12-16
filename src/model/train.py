@@ -48,7 +48,7 @@ def train_one(variable: str, horizon: int):
 
     def _sort_lag_cols(cols):
         def lag_key(c):
-            m = re.search(r"obs_lag_(\d+)", c)
+            m = re.search(r"^obs_lag_(\d+)h?$", c)
             return int(m.group(1)) if m else 10**9
         return sorted(cols, key=lag_key)
 
@@ -124,22 +124,43 @@ def train_one(variable: str, horizon: int):
     with mlflow.start_run(run_name=f"{variable}_H{horizon}"):
         # Baseline
         tr = pd.concat([f[0] for f in folds], ignore_index=True)
+
+        from sklearn.impute import SimpleImputer
+
+        imp = SimpleImputer(strategy="median").set_output(transform="pandas")
         base = Pipeline([
-            ("imp", SimpleImputer(strategy="median")),
+            ("imp", imp),
             ("lr", LinearRegression())
         ]).fit(tr[feat], tr["y"])
 
         try:
             ens = Pipeline([
-            ("imp", SimpleImputer(strategy="median")),
-            ("lgbm", LGBMRegressor(n_estimators=300, learning_rate=0.05, max_depth=-1, subsample=0.8)),
-        ])
+                ("imp", imp),
+                ("lgbm", LGBMRegressor(n_estimators=300, learning_rate=0.05, max_depth=-1, subsample=0.8)),
+            ])
             ens.fit(tr[feat], tr["y"])
             model = ens
             algo = "lightgbm"
         except Exception:
             model = base
             algo = "linear"
+
+        # base = Pipeline([
+        #     ("imp", SimpleImputer(strategy="median")),
+        #     ("lr", LinearRegression())
+        # ]).fit(tr[feat], tr["y"])
+
+        # try:
+        #     ens = Pipeline([
+        #     ("imp", SimpleImputer(strategy="median")),
+        #     ("lgbm", LGBMRegressor(n_estimators=300, learning_rate=0.05, max_depth=-1, subsample=0.8)),
+        # ])
+        #     ens.fit(tr[feat], tr["y"])
+        #     model = ens
+        #     algo = "lightgbm"
+        # except Exception:
+        #     model = base
+        #     algo = "linear"
 
         dfm, rmse, mae = evaluate_model(model, folds, feat)
         mlflow.log_params({"variable": variable, "horizon": horizon, "algo": algo})
