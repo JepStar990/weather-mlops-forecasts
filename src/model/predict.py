@@ -38,7 +38,7 @@ def mlflow_setup():
 import re
 def _sort_lag_cols(cols):
     def lag_key(c):
-        m = re.search(r"obs_lag_(\d+)", c)
+        m = re.search(r"^obs_lag_(\d+)h?$", c)
         return int(m.group(1)) if m else 10**9
     return sorted(cols, key=lag_key)
 
