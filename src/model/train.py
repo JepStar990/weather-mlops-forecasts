@@ -146,38 +146,37 @@ def train_one(variable: str, horizon: int):
             input_example=input_example,
         )
         logger.info("Trained %s H+%d: RMSE=%.3f MAE=%.3f (run_id=%s)", variable, horizon, rmse, mae, run_id)
-
-        # Promote to Production (archive previous)
-        client = MlflowClient()
-        latest_none = client.get_latest_versions(model_name, stages=["None"])
-        if latest_none:
-            mv = latest_none[0]
-            client.transition_model_version_stage(
-            name=model_name,
-            version=mv.version,
-            stage="Production",
-            archive_existing_versions=True,
-            )
-            logger.info("Promoted %s version %s to Production", model_name, mv.version)
-        else:
-            logger.warning("No latest 'None' version found to promote for %s", model_name)
-        
-        # Register the run in DB (per variable & horizon)
-        with db_conn() as conn:
-            conn.execute(text("""
-                INSERT INTO models (name, mlflow_run_id, is_champion)
-                VALUES (:n, :r, FALSE)
-            """), {"n": model_name, "r": run_id})
         return {"variable": variable, "horizon": horizon, "rmse": rmse, "mae": mae, "run_id": run_id, "features": feat}
 
+
 def main():
+    import json
     results = []
     for var in CFG.VARIABLES:
         for h in CFG.HORIZONS_HOURS:
             r = train_one(var, h)
-            if r: results.append(r)
+            if r:
+                results.append(r)
+
     if not results:
         logger.warning("No models trained")
+        return
+
+    agg_rmse = sum(r["rmse"] for r in results) / len(results)
+    agg_mae = sum(r["mae"] for r in results) / len(results)
+    run_id = results[0]["run_id"]
+    name = "model"
+
+    with db_conn() as conn:
+        conn.execute(
+            text("INSERT INTO models (name, mlflow_run_id, metrics_json, is_champion) VALUES (:n, :r, :m, FALSE)"),
+            {"n": name, "r": run_id, "m": json.dumps({
+                "agg_rmse": round(agg_rmse, 4),
+                "agg_mae": round(agg_mae, 4),
+                "per_model": [{k: r[k] for k in ("variable", "horizon", "rmse", "mae")} for r in results],
+            })},
+        )
+    logger.info("Stored model %s (run_id=%s) with agg_rmse=%.4f agg_mae=%.4f", name, run_id, agg_rmse, agg_mae)
 
 if __name__ == "__main__":
     main()
