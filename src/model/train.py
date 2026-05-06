@@ -91,37 +91,6 @@ def train_one(variable: str, horizon: int):
             logger.warning("No folds for %s H+%d", variable, horizon)
             return None
 
-    # # features
-    # vendor_cols = [c for c in ("open_meteo","met_no","openweather","visual_crossing","weather_gov") if c in Xy.columns]
-    # lag_cols = [c for c in Xy.columns if c.startswith("obs_lag_")]
-    # feat = vendor_cols + lag_cols + ["hour","dow"]
-
-    # # Keep rows that have a target and at least ONE vendor signal
-    # Xy = Xy[Xy["y"].notna()]
-    # if not vendor_cols:
-    #     logger.warning("No vendor columns present for %s H+%d", variable, horizon)
-    #     return None
-    # Xy = Xy.dropna(subset=vendor_cols, how="all")  # require >=1 vendor column non-null
-    # if Xy.empty:
-    #     logger.warning("After vendor filter, no rows for %s H+%d", variable, horizon)
-    #     return None
-
-    # # Fill lag features (if missing) with median; rebuild hour/dow if missing
-    # for c in lag_cols:
-    #     if c in Xy.columns:
-    #         Xy[c] = Xy[c].fillna(Xy[c].median())
-
-    # if "hour" not in Xy.columns or Xy["hour"].isna().any():
-    #     Xy["hour"] = pd.to_datetime(Xy["valid_time"]).dt.hour
-    # if "dow" not in Xy.columns or Xy["dow"].isna().any():
-    #     Xy["dow"] = pd.to_datetime(Xy["valid_time"]).dt.dayofweek
-
-    # # Now build folds
-    # folds = weekly_folds(Xy)
-    # if not folds:
-    #     logger.warning("No folds for %s H+%d", variable, horizon)
-    #     return None
-
     _setup_mlflow()
     with mlflow.start_run(run_name=f"{variable}_H{horizon}"):
         # Baseline
@@ -146,23 +115,6 @@ def train_one(variable: str, horizon: int):
         except Exception:
             model = base
             algo = "linear"
-
-        # base = Pipeline([
-        #     ("imp", SimpleImputer(strategy="median")),
-        #     ("lr", LinearRegression())
-        # ]).fit(tr[feat], tr["y"])
-
-        # try:
-        #     ens = Pipeline([
-        #     ("imp", SimpleImputer(strategy="median")),
-        #     ("lgbm", LGBMRegressor(n_estimators=300, learning_rate=0.05, max_depth=-1, subsample=0.8)),
-        # ])
-        #     ens.fit(tr[feat], tr["y"])
-        #     model = ens
-        #     algo = "lightgbm"
-        # except Exception:
-        #     model = base
-        #     algo = "linear"
 
         dfm, rmse, mae = evaluate_model(model, folds, feat)
         mlflow.log_params({"variable": variable, "horizon": horizon, "algo": algo})
