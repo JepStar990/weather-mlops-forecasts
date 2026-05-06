@@ -1,49 +1,100 @@
 """
-Champion–Challenger promotion using recent RMSE/MAE averaged over last 7 days.
-If challenger better by >2% on both RMSE & MAE, promote.
+Champion-Challenger promotion: compare the latest two model entries.
+If the challenger outperforms the champion by >2% on both aggregated
+RMSE and MAE, promote it. Otherwise keep the current champion.
 """
-from datetime import datetime, timedelta, timezone
+import json
 from sqlalchemy import text
 from src.utils.db_utils import db_conn
 from src.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-def get_current_champion(conn, name: str):
-    r = conn.execute(text("SELECT id, mlflow_run_id FROM models WHERE name=:n AND is_champion=TRUE ORDER BY id DESC LIMIT 1"), {"n": name}).fetchone()
-    return r
+PROMOTION_THRESHOLD = 0.02  # 2%
 
-def insert_candidate(conn, name: str, run_id: str):
-    conn.execute(text("INSERT INTO models (name, mlflow_run_id, is_champion) VALUES (:n,:r,FALSE)"), {"n": name, "r": run_id})
 
-def promote(conn, name: str, challenger_run_id: str):
-    conn.execute(text("UPDATE models SET is_champion=FALSE WHERE name=:n"), {"n": name})
-    conn.execute(text("INSERT INTO models (name, mlflow_run_id, is_champion) VALUES (:n,:r,TRUE)"), {"n": name, "r": challenger_run_id})
+def better_by(champion_val: float, challenger_val: float) -> float:
+    """Return relative improvement of challenger over champion (>0 = better)."""
+    if champion_val <= 0:
+        return 0.0
+    return (champion_val - challenger_val) / champion_val
 
-def better_by(past: float, now: float) -> float:
-    if past <= 0: return 0.0
-    return (past - now) / past
 
 def main():
     with db_conn() as conn:
-        # For simplicity, use single model name "ensemble"
         name = "model"
-        # In a more advanced setup, we'd persist per (variable,horizon) metrics and run_ids in a registry.
-        # Here, we just look at the latest two entries (challenger vs champion silhouettes).
-        rows = conn.execute(text("SELECT id, mlflow_run_id, created_at FROM models WHERE name=:n ORDER BY id DESC LIMIT 2"), {"n": name}).fetchall()
+        rows = conn.execute(
+            text(
+                "SELECT id, mlflow_run_id, metrics_json, created_at, is_champion "
+                "FROM models WHERE name = :n ORDER BY id DESC LIMIT 2"
+            ),
+            {"n": name},
+        ).fetchall()
+
         if len(rows) < 1:
             logger.info("No models registered; nothing to promote")
             return
-        # For demo, promote the newest if none champion exists
-        champ = get_current_champion(conn, name)
-        if not champ:
-            conn.execute(text("UPDATE models SET is_champion=TRUE WHERE id=:id"), {"id": rows[0].id})
-            logger.info("No champion; promoted latest model id=%s", rows[0].id)
+
+        champion = conn.execute(
+            text("SELECT id, mlflow_run_id, metrics_json FROM models WHERE name = :n AND is_champion = TRUE ORDER BY id DESC LIMIT 1"),
+            {"n": name},
+        ).fetchone()
+
+        if not champion:
+            conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": rows[0].id})
+            logger.info("No champion existed; promoted model id=%s as first champion", rows[0].id)
             return
-        logger.info("Champion exists (id=%s); for full criteria, compare tracked metrics via MLflow (external).", champ.id)
-        # In a real setup we’d query MLflow metrics and do statistical tests; omitted here due to env.
-        # Keep champion as-is by default        # Keep champion as-is by default.
-        logger.info("No automatic promotion performed in this pass.")
+
+        challenger = rows[0]
+        if challenger.id == champion.id:
+            logger.info("Champion (id=%s) is already the latest model; no challenger to evaluate", champion.id)
+            return
+
+        if not champion.metrics_json or not challenger.metrics_json:
+            logger.warning("Missing metrics_json on champion or challenger; skipping promotion")
+            return
+
+        champ_m = json.loads(champion.metrics_json) if isinstance(champion.metrics_json, str) else champion.metrics_json
+        chall_m = json.loads(challenger.metrics_json) if isinstance(challenger.metrics_json, str) else challenger.metrics_json
+
+        rmse_imp = better_by(champ_m["agg_rmse"], chall_m["agg_rmse"])
+        mae_imp = better_by(champ_m["agg_mae"], chall_m["agg_mae"])
+
+        logger.info(
+            "Champion (id=%s) agg_rmse=%.4f agg_mae=%.4f | Challenger (id=%s) agg_rmse=%.4f agg_mae=%.4f",
+            champion.id, champ_m["agg_rmse"], champ_m["agg_mae"],
+            challenger.id, chall_m["agg_rmse"], chall_m["agg_mae"],
+        )
+        logger.info("Improvement: RMSE %.2f%% MAE %.2f%% (threshold %.1f%%)",
+                     rmse_imp * 100, mae_imp * 100, PROMOTION_THRESHOLD * 100)
+
+        if rmse_imp > PROMOTION_THRESHOLD and mae_imp > PROMOTION_THRESHOLD:
+            conn.execute(text("UPDATE models SET is_champion = FALSE WHERE name = :n"), {"n": name})
+            conn.execute(
+                text("UPDATE models SET is_champion = TRUE WHERE id = :id"),
+                {"id": challenger.id},
+            )
+            logger.info("PROMOTED challenger (id=%s) to champion!", challenger.id)
+
+            import os
+            import mlflow
+            if os.getenv("DAGSHUB_USERNAME") and os.getenv("DAGSHUB_TOKEN"):
+                from mlflow.tracking import MlflowClient
+                client = MlflowClient()
+                try:
+                    latest_none = client.get_latest_versions(name, stages=["None"])
+                    if latest_none:
+                        mv = latest_none[0]
+                        client.transition_model_version_stage(
+                            name=name, version=mv.version,
+                            stage="Production", archive_existing_versions=True,
+                        )
+                        logger.info("Promoted MLflow model %s version %s to Production", name, mv.version)
+                except Exception as e:
+                    logger.warning("MLflow promotion failed (non-fatal): %s", e)
+        else:
+            logger.info("Challenger did not beat threshold; keeping champion (id=%s)", champion.id)
+
 
 if __name__ == "__main__":
     main()

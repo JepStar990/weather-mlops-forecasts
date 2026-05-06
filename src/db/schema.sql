@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS models (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   mlflow_run_id TEXT,
+  metrics_json JSONB,
   created_at TIMESTAMPTZ DEFAULT now(),
   is_champion BOOLEAN DEFAULT FALSE
 );
