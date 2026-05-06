@@ -15,7 +15,7 @@ An end-to-end, production-grade MLOps system to ingest hourly weather forecasts 
 
 ```mermaid
 graph TB
-    subgraph "Data Sources"
+    subgraph Sources["Data Sources"]
         OM[Open-Meteo]
         MET[MET Norway]
         OW[OpenWeather]
@@ -24,28 +24,30 @@ graph TB
         MS[Meteostat Obs]
     end
 
-    subgraph "Ingestion (GitHub Actions)"
-        ETL[ETL Forecasts<br/>hourly :17 UTC]
-        OBS[Ingest Obs<br/>hourly :47 UTC]
+    subgraph Ingest["Ingestion - GitHub Actions"]
+        ETL[ETL Forecasts - hourly 17 UTC]
+        OBS[Ingest Obs - hourly 47 UTC]
     end
 
-    subgraph "Neon Serverless Postgres"
+    subgraph DB["Neon Serverless Postgres"]
         FCT[(forecasts)]
         OBT[(observations)]
         ERR[(errors)]
         MDL[(models)]
     end
 
-    subgraph "ML Pipeline"
+    subgraph ML["ML Pipeline"]
         FEAT[Feature Engineering]
         TRAIN[Train Ensemble]
         PROMO[Promote Champion]
     end
 
-    subgraph "Serving"
-        API[FastAPI / Deta Space]
-        DASH[Gradio / Hugging Face]
+    subgraph Serve["Serving"]
+        API[FastAPI on Deta Space]
+        DASH[Gradio on Hugging Face]
     end
+
+    MLFLOW[DagsHub MLflow]
 
     OM --> ETL
     MET --> ETL
@@ -61,7 +63,7 @@ graph TB
     OBT --> FEAT
     FEAT --> TRAIN
     TRAIN --> MDL
-    TRAIN --> MLFLOW[DagsHub MLflow]
+    TRAIN --> MLFLOW
     MDL --> PROMO
 
     FCT --> ERR
@@ -94,7 +96,7 @@ flowchart LR
     B --> E[Feature Matrix]
     D --> E
     E --> F[LightGBM Ensemble]
-    F --> G[(forecasts<br/>source=our_model)]
+    F --> G[(forecasts / our_model)]
     B --> H[Error Computation]
     D --> H
     H --> I[(errors)]
@@ -157,48 +159,45 @@ python src/etl/ingest_open_meteo.py
 ```mermaid
 erDiagram
     forecasts {
-        bigserial id PK
-        text source
+        int id PK
+        string source
         float lat
         float lon
-        text variable
-        timestamptz issue_time
-        timestamptz valid_time
+        string variable
+        datetime issue_time
+        datetime valid_time
         int horizon_hours
         float value
-        text unit
-        timestamptz created_at
+        string unit
     }
     observations {
-        bigserial id PK
-        text station_id
+        int id PK
+        string station_id
         float lat
         float lon
-        text variable
-        timestamptz obs_time
+        string variable
+        datetime obs_time
         float value
-        text unit
-        text source
-        timestamptz created_at
+        string unit
+        string source
     }
     errors {
-        bigserial id PK
-        text source
-        text variable
-        timestamptz valid_time
+        int id PK
+        string source
+        string variable
+        datetime valid_time
         int horizon_hours
         float mae
         float rmse
         float mape
         int n
-        timestamptz created_at
     }
     models {
-        bigserial id PK
-        text name
-        text mlflow_run_id
-        jsonb metrics_json
-        timestamptz created_at
+        int id PK
+        string name
+        string mlflow_run_id
+        string metrics_json
+        datetime created_at
         bool is_champion
     }
     forecasts ||--o{ errors : "joined with"
