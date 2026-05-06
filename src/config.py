@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 load_dotenv()
-loggerlogger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def _json_env(name: str, default):
     """Parse JSON from env; return default if missing or invalid."""
@@ -39,6 +39,12 @@ class Config:
     REQUESTS_CONCURRENCY: int = int(os.getenv("REQUESTS_CONCURRENCY", "4"))
     REQUESTS_TIMEOUT: int = int(os.getenv("REQUESTS_TIMEOUT", "30"))
     REQUESTS_CACHE_TTL_SECONDS: int = int(os.getenv("REQUESTS_CACHE_TTL_SECONDS", "600"))
+
+    # Data retention (days) — keep within Neon free-tier limits (~0.5 GB)
+    FORECAST_RETENTION_DAYS: int = int(os.getenv("FORECAST_RETENTION_DAYS", "14"))
+    OBSERVATION_RETENTION_DAYS: int = int(os.getenv("OBSERVATION_RETENTION_DAYS", "90"))
+    ERROR_RETENTION_DAYS: int = int(os.getenv("ERROR_RETENTION_DAYS", "90"))
+    PRUNE_BATCH_SIZE: int = int(os.getenv("PRUNE_BATCH_SIZE", "5000"))
 
 CFG = Config()
 

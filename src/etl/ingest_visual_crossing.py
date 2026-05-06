@@ -57,6 +57,8 @@ def main():
     for loc in CFG.TARGET_LOCATIONS:
         frames.append(fetch_visual_crossing(loc["lat"], loc["lon"], CFG.VARIABLES))
     df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    if not df.empty:
+        df = df[df["horizon_hours"].isin(CFG.HORIZONS_HOURS)]
     insert_dataframe(df, "forecasts")
 
 if __name__ == "__main__":

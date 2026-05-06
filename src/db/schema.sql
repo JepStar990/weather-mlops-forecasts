@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS errors (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Pruning indexes
+CREATE INDEX IF NOT EXISTS idx_forecasts_valid_time ON forecasts(valid_time);
+CREATE INDEX IF NOT EXISTS idx_observations_obs_time ON observations(obs_time);
+CREATE INDEX IF NOT EXISTS idx_errors_valid_time ON errors(valid_time);
+
 -- Lightweight model registry pointer (canonical is DagsHub/MLflow)
 CREATE TABLE IF NOT EXISTS models (
   id BIGSERIAL PRIMARY KEY,

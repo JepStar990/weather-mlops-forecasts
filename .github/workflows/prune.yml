@@ -1,0 +1,26 @@
+name: Prune Old Data
+on:
+  schedule:
+    - cron: "7 3 * * *"   # daily at 03:07 UTC (before train)
+  workflow_dispatch: {}
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Prune old data
+        run: python -m src.jobs.job_prune_daily
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FORECAST_RETENTION_DAYS: "14"
+          OBSERVATION_RETENTION_DAYS: "90"
+          ERROR_RETENTION_DAYS: "90"
