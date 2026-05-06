@@ -14,64 +14,35 @@ An end-to-end, production-grade MLOps system to ingest hourly weather forecasts 
 ## Architecture
 
 ```mermaid
-graph TB
-    subgraph Sources["Data Sources"]
-        OM[Open-Meteo]
-        MET[MET Norway]
-        OW[OpenWeather]
-        VC[Visual Crossing]
-        NWS[weather.gov]
-        MS[Meteostat Obs]
-    end
+graph TD
+    OM[Open-Meteo] --> ETL
+    MET[MET Norway] --> ETL
+    OW[OpenWeather] --> ETL
+    VC[Visual Crossing] --> ETL
+    NWS[weather.gov] --> ETL
+    MS[Meteostat Obs] --> OBS
 
-    subgraph Ingest["Ingestion - GitHub Actions"]
-        ETL[ETL Forecasts - hourly 17 UTC]
-        OBS[Ingest Obs - hourly 47 UTC]
-    end
+    ETL[ETL Forecasts hourly] --> FCT
+    OBS[Ingest Obs hourly] --> OBT
 
-    subgraph DB["Neon Serverless Postgres"]
-        FCT[(forecasts)]
-        OBT[(observations)]
-        ERR[(errors)]
-        MDL[(models)]
-    end
-
-    subgraph ML["ML Pipeline"]
-        FEAT[Feature Engineering]
-        TRAIN[Train Ensemble]
-        PROMO[Promote Champion]
-    end
-
-    subgraph Serve["Serving"]
-        API[FastAPI on Deta Space]
-        DASH[Gradio on Hugging Face]
-    end
-
-    MLFLOW[DagsHub MLflow]
-
-    OM --> ETL
-    MET --> ETL
-    OW --> ETL
-    VC --> ETL
-    NWS --> ETL
-    MS --> OBS
-
-    ETL --> FCT
-    OBS --> OBT
-
-    FCT --> FEAT
-    OBT --> FEAT
-    FEAT --> TRAIN
-    TRAIN --> MDL
+    FCT[(forecasts)] --> FEAT
+    OBT[(observations)] --> FEAT
+    FEAT[Feature Engineering] --> TRAIN
+    TRAIN[Train Ensemble] --> MDL
     TRAIN --> MLFLOW
-    MDL --> PROMO
+    MDL[(models)] --> PROMO
+    PROMO[Promote Champion]
 
     FCT --> ERR
     OBT --> ERR
-    ERR --> LB[Leaderboard]
+    ERR[Compute Errors] --> LB
 
     FCT --> API
-    API --> DASH
+    API[FastAPI Deta Space] --> DASH
+    DASH[Gradio Dashboard]
+
+    MLFLOW[DagsHub MLflow]
+    LB[Leaderboard]
 ```
 
 ## Pipeline Schedule
@@ -90,20 +61,20 @@ All staggered off the hour to reduce GitHub Actions queue congestion.
 ## Data Flow
 
 ```mermaid
-flowchart LR
+graph LR
     A[5 Forecast APIs] --> B[(forecasts)]
     C[Meteostat] --> D[(observations)]
     B --> E[Feature Matrix]
     D --> E
     E --> F[LightGBM Ensemble]
-    F --> G[(forecasts / our_model)]
+    F --> G[(forecasts our_model)]
     B --> H[Error Computation]
     D --> H
     H --> I[(errors)]
     I --> J[Leaderboard]
     I --> K[Gradio Dashboard]
     G --> K
-    G --> L[FastAPI /predict]
+    G --> L[FastAPI predict]
 ```
 
 ## All Free Tiers
@@ -158,7 +129,7 @@ python src/etl/ingest_open_meteo.py
 
 ```mermaid
 erDiagram
-    forecasts {
+    FORECASTS {
         int id PK
         string source
         float lat
@@ -170,7 +141,7 @@ erDiagram
         float value
         string unit
     }
-    observations {
+    OBSERVATIONS {
         int id PK
         string station_id
         float lat
@@ -181,7 +152,7 @@ erDiagram
         string unit
         string source
     }
-    errors {
+    ERRORS {
         int id PK
         string source
         string variable
@@ -190,9 +161,9 @@ erDiagram
         float mae
         float rmse
         float mape
-        int n
+        int n_count
     }
-    models {
+    MODELS {
         int id PK
         string name
         string mlflow_run_id
@@ -200,9 +171,9 @@ erDiagram
         datetime created_at
         bool is_champion
     }
-    forecasts ||--o{ errors : "joined with"
-    observations ||--o{ errors : "for validation"
-    models ||--o{ forecasts : "our_model predictions"
+    FORECASTS ||--o{ ERRORS : verifies
+    OBSERVATIONS ||--o{ ERRORS : validates
+    MODELS ||--o{ FORECASTS : predicts
 ```
 
 ## API Endpoints
