@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather MLOps — Multi-API Forecast Verification & Ensemble</title>
+<meta name="description" content="Production-grade MLOps system for weather forecast ingestion, verification, and ensemble prediction. Zero-cost deployment on free tiers.">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --blue-900: #1e3a5f; --blue-800: #1e40af; --blue-700: #1a56db; --blue-600: #2563eb;
+    --blue-500: #3b82f6; --blue-400: #60a5fa; --blue-100: #dbeafe; --blue-50: #eff6ff;
+    --yellow-500: #f59e0b; --yellow-400: #fbbf24; --yellow-300: #fcd34d; --yellow-100: #fef3c7; --yellow-50: #fffbeb;
+    --gray-900: #111827; --gray-700: #374151; --gray-500: #6b7280; --gray-200: #e5e7eb; --gray-100: #f3f4f6; --gray-50: #f9fafb;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--gray-900); background: var(--gray-50); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* Nav */
+  nav { background: var(--blue-900); padding: 14px 0; position: sticky; top: 0; z-index: 100; }
+  nav .container { display: flex; justify-content: space-between; align-items: center; }
+  nav .logo { font-size: 1.2rem; font-weight: 700; color: var(--yellow-400); }
+  nav a { color: var(--blue-100); text-decoration: none; margin-left: 24px; font-size: 0.9rem; transition: color 0.2s; }
+  nav a:hover { color: var(--yellow-400); }
+
+  /* Hero */
+  .hero { background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 50%, var(--blue-700) 100%); color: white; padding: 80px 0 60px; text-align: center; position: relative; overflow: hidden; }
+  .hero::after { content: ''; position: absolute; bottom: -30px; left: 0; right: 0; height: 60px; background: var(--gray-50); border-radius: 50% 50% 0 0; }
+  .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+  .hero h1 span { color: var(--yellow-400); }
+  .hero p.sub { font-size: 1.2rem; opacity: 0.9; max-width: 700px; margin: 0 auto 32px; }
+  .hero .badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .hero .badge { background: rgba(255,255,255,0.15); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .hero .cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn { padding: 12px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+  .btn-primary { background: var(--yellow-500); color: var(--blue-900); }
+  .btn-secondary { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+
+  /* Sections */
+  section { padding: 60px 0; }
+  section h2 { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 12px; color: var(--blue-900); }
+  section h3 { font-size: 1.1rem; text-align: center; color: var(--gray-500); margin-bottom: 40px; font-weight: 400; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 40px; }
+  .stat-card { background: white; padding: 28px; border-radius: 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-top: 3px solid var(--yellow-500); }
+  .stat-card .num { font-size: 2.2rem; font-weight: 800; color: var(--blue-700); }
+  .stat-card .label { color: var(--gray-500); font-size: 0.9rem; margin-top: 4px; }
+
+  /* Features */
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .feature-card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid var(--blue-500); transition: transform 0.2s; }
+  .feature-card:hover { transform: translateY(-4px); }
+  .feature-card .icon { font-size: 1.8rem; margin-bottom: 12px; }
+  .feature-card h4 { color: var(--blue-900); margin-bottom: 8px; }
+
+  /* Architecture */
+  .arch-section { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow-x: auto; }
+  .arch-section h3 { color: var(--blue-900); margin-bottom: 24px; }
+
+  /* Pipeline */
+  .pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 32px 0; }
+  .pipe-step { background: var(--blue-50); padding: 20px; border-radius: 10px; text-align: center; border: 2px solid var(--blue-100); position: relative; }
+  .pipe-step .step-num { background: var(--blue-700); color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; }
+  .pipe-step h4 { color: var(--blue-900); font-size: 0.95rem; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: var(--blue-900); color: var(--yellow-400); padding: 12px 16px; text-align: left; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--gray-200); }
+  tr:nth-child(even) { background: var(--blue-50); }
+
+  /* Use case cards */
+  .use-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+  .use-card { background: var(--yellow-50); padding: 24px; border-radius: 12px; border: 1px solid var(--yellow-100); }
+  .use-card h4 { color: var(--blue-900); margin-bottom: 8px; }
+
+  /* Code block */
+  pre { background: var(--gray-900); color: #e5e7eb; padding: 20px; border-radius: 10px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+  code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+  /* Footer */
+  footer { background: var(--blue-900); color: var(--blue-100); padding: 40px 0; text-align: center; }
+  footer a { color: var(--yellow-400); text-decoration: none; }
+  footer .footer-links { margin: 20px 0; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    section { padding: 40px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">Weather MLOps</div>
+    <div>
+      <a href="#about">About</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#features">Features</a>
+      <a href="#stats">Stats</a>
+      <a href="#setup">Setup</a>
+      <a href="#api">API</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <h1>Weather <span>MLOps</span></h1>
+    <p class="sub">Production-grade MLOps system for multi-provider weather forecast ingestion, verification, and ensemble prediction — all running on <strong>$0/month</strong> free tiers.</p>
+    <div class="badges">
+      <span class="badge">5 Forecast APIs</span>
+      <span class="badge">Ensemble ML</span>
+      <span class="badge">Neon Postgres</span>
+      <span class="badge">MLflow + DagsHub</span>
+      <span class="badge">FastAPI</span>
+      <span class="badge">Gradio Dashboard</span>
+      <span class="badge">GitHub Actions</span>
+    </div>
+    <div class="cta">
+      <a href="https://github.com/JepStar990/weather-mlops-forecasts" class="btn btn-primary">View on GitHub</a>
+      <a href="#architecture" class="btn btn-secondary">How It Works</a>
+    </div>
+  </div>
+</header>
+
+<section id="about">
+  <div class="container">
+    <h2>What This Project Does</h2>
+    <h3>A complete, automated weather intelligence pipeline</h3>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">🌤️</div>
+        <h4>Multi-Source Ingestion</h4>
+        <p>Every hour, forecasts are ingested from Open-Meteo, MET Norway, OpenWeather, Visual Crossing, and US NWS. All free or free-tier APIs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <h4>Forecast Verification</h4>
+        <p>Ground-truth observations from Meteostat are joined against every forecast. MAE, RMSE, and MAPE computed continuously per source, variable, and horizon.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🤖</div>
+        <h4>Ensemble Model</h4>
+        <p>A LightGBM ensemble is trained daily on all vendor forecasts + lagged observations + calendar features. Champion-challenger promotion with >2% improvement threshold.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🚀</div>
+        <h4>Live Serving</h4>
+        <p>FastAPI serves real-time predictions. A Gradio dashboard visualizes verification metrics, leaderboards, and drift detection.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💸</div>
+        <h4>Zero Budget</h4>
+        <p>Every component runs on free tiers: Neon Serverless Postgres, DagsHub MLflow, GitHub Actions, Hugging Face Spaces, and Deta Space.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🇿🇦</div>
+        <h4>South Africa First</h4>
+        <p>Pre-configured for 9 South African cities (Johannesburg, Cape Town, Durban, Pretoria, Gqeberha, Bloemfontein, Polokwane, Mbombela, East London).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture" style="background: var(--blue-50);">
+  <div class="container">
+    <h2>System Architecture</h2>
+    <h3>End-to-end data flow from ingestion to serving</h3>
+    <div class="arch-section">
+      <div class="mermaid">
+graph TB
+    subgraph "Data Sources"
+        OM[Open-Meteo<br/>free, no key]
+        MET[MET Norway<br/>User-Agent only]
+        OW[OpenWeather<br/>1K calls/day free]
+        VC[Visual Crossing<br/>1K records/day free]
+        NWS[weather.gov<br/>US only, free]
+        MS[Meteostat<br/>observations, CC BY-NC]
+    end
+
+    subgraph "Ingestion (GitHub Actions, hourly)"
+        ETL[ETL Pipeline<br/>at :17 UTC]
+        OBS[Obs Pipeline<br/>at :47 UTC]
+    end
+
+    subgraph "Storage (Neon Serverless Postgres)"
+        FCT[(forecasts)]
+        OBT[(observations)]
+        ERR[(errors)]
+        MDL[(models)]
+    end
+
+    subgraph "ML Pipeline (GitHub Actions, daily)"
+        FEAT[Feature Engineering<br/>vendor pivots + lags + calendar]
+        TRAIN[Train Ensemble<br/>LightGBM + Linear]
+        PROMO[Promote Champion<br/>>&gt;2% RMSE & MAE]
+    end
+
+    subgraph "Verification (hourly)"
+        VERIFY[Compute Errors<br/>MAE / RMSE / MAPE]
+        LB[Leaderboard<br/>best source per var+horizon]
+    end
+
+    subgraph "Serving"
+        API[FastAPI<br/>Deta Space]
+        DASH[Gradio Dashboard<br/>Hugging Face Spaces]
+    end
+
+    subgraph "Experiment Tracking"
+        MLFLOW[DagsHub MLflow<br/>model registry + metrics]
+    end
+
+    OM --> ETL
+    MET --> ETL
+    OW --> ETL
+    VC --> ETL
+    NWS --> ETL
+    MS --> OBS
+
+    ETL --> FCT
+    OBS --> OBT
+
+    FCT --> VERIFY
+    OBT --> VERIFY
+    VERIFY --> ERR
+    ERR --> LB
+
+    FCT --> FEAT
+    OBT --> FEAT
+    FEAT --> TRAIN
+    TRAIN --> MLFLOW
+    TRAIN --> MDL
+    MDL --> PROMO
+
+    FCT --> API
+    API --> DASH
+
+    style FCT fill:#dbeafe,stroke:#1e40af
+    style OBT fill:#dbeafe,stroke:#1e40af
+    style ERR fill:#fef3c7,stroke:#f59e0b
+    style TRAIN fill:#dbeafe,stroke:#1e40af
+    style PROMO fill:#fef3c7,stroke:#f59e0b
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="container">
+    <h2>Pipeline Schedule</h2>
+    <h3>All times UTC, staggered off the hour to avoid GitHub Actions queue congestion</h3>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="step-num">1</div>
+        <h4>ETL Forecasts</h4>
+        <p style="font-size:0.85rem;color:var(--gray-500)">Hourly :17</p>
+        <p style="font-size:0.8rem">5 APIs ingested</p>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">2</div>
+        <h4>Predict</h4>
+        <p style="font-size:0.85rem;color:var(--gray-500)">Hourly :27</p>
+        <p style="font-size:0.8rem">Ensemble inference</p>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">3</div>
+        <h4>Monitor</h4>
+        <p style="font-size:0.85rem;color:var(--gray-500)">Hourly :37</p>
+        <p style="font-size:0.8rem">Leaderboard + volume</p>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">4</div>
+        <h4>Verify</h4>
+        <p style="font-size:0.85rem;color:var(--gray-500)">Hourly :47</p>
+        <p style="font-size:0.8rem">Obs + error compute</p>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">5</div>
+        <h4>Train + Promote</h4>
+        <p style="font-size:0.85rem;color:var(--gray-500)">Daily 03:17</p>
+        <p style="font-size:0.8rem">Model retraining</p>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">6</div>
+        <h4>Prune</h4>
+        <p style="font-size:0.85rem;color:var(--gray-500)">Daily 03:07</p>
+        <p style="font-size:0.8rem">Data retention</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stats" style="background: var(--blue-50);">
+  <div class="container">
+    <h2>Project Stats</h2>
+    <h3>Designed for scale within free-tier constraints</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num">5</div>
+        <div class="label">Forecast Providers</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">3</div>
+        <div class="label">Weather Variables</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">7</div>
+        <div class="label">Forecast Horizons (1h–72h)</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">9</div>
+        <div class="label">South African Cities</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">6</div>
+        <div class="label">GitHub Actions Workflows</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">~30K</div>
+        <div class="label">Rows ingested / day</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">$0</div>
+        <div class="label">Monthly infrastructure cost</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">2</div>
+        <div class="label">Model algorithms (LightGBM + Linear)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <h2>Key Features</h2>
+    <h3>Production-grade MLOps patterns on a zero-cost stack</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Capability</th><th>Implementation</th><th>Free Tier Used</th></tr>
+        <tr><td>Forecast Ingestion</td><td>5 vendor-specific ETL modules with unit normalization</td><td>Open-Meteo, MET Norway, OpenWeather, Visual Crossing, NWS</td></tr>
+        <tr><td>Observation Ingestion</td><td>Meteostat Python library with 7-day lookback</td><td>Meteostat (CC BY-NC)</td></tr>
+        <tr><td>Data Warehouse</td><td>Neon Serverless Postgres with indexed pruning</td><td>Neon (0.5 GB, 100 compute hrs)</td></tr>
+        <tr><td>Feature Engineering</td><td>Vendor pivot + lagged observations (1h,3h,6h) + calendar</td><td>Pandas + SQLAlchemy</td></tr>
+        <tr><td>Model Training</td><td>Per-variable/horizon LightGBM + LinearRegression with weekly CV</td><td>GitHub Actions (2000 min/month)</td></tr>
+        <tr><td>Experiment Tracking</td><td>MLflow on DagsHub with model registry</td><td>DagsHub (free for public repos)</td></tr>
+        <tr><td>Model Promotion</td><td>Champion-challenger with >2% RMSE & MAE threshold</td><td>Postgres + MLflow API</td></tr>
+        <tr><td>Inference</td><td>Batch prediction streaming (50K-row batches)</td><td>GitHub Actions</td></tr>
+        <tr><td>Verification</td><td>Forecast-observation join with MAE/RMSE/MAPE compute</td><td>Neon + Pandas</td></tr>
+        <tr><td>Leaderboard</td><td>Best source per variable/horizon by mean RMSE</td><td>Postgres SQL</td></tr>
+        <tr><td>Serving API</td><td>FastAPI with /health, /sources, /metrics, /predict</td><td>Deta Space</td></tr>
+        <tr><td>Dashboard</td><td>Gradio with 4 tabs (Verification, Leaderboard, Our vs Best, Drift)</td><td>Hugging Face Spaces</td></tr>
+        <tr><td>Orchestration</td><td>6 GitHub Actions workflows, staggered cron</td><td>GitHub Actions</td></tr>
+        <tr><td>Data Management</td><td>Automated pruning with configurable retention TTL</td><td>Postgres batched DELETE</td></tr>
+        <tr><td>Caching</td><td>File-based HTTP cache with configurable TTL + exponential backoff</td><td>Local filesystem</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="use-cases" style="background: var(--yellow-50);">
+  <div class="container">
+    <h2>Use Cases</h2>
+    <h3>Real-world applications for this system</h3>
+    <div class="use-grid">
+      <div class="use-card">
+        <h4>Renewable Energy Forecasting</h4>
+        <p>Predict wind speed and temperature for solar/wind farm output optimization. Multi-horizon forecasts enable day-ahead energy trading.</p>
+      </div>
+      <div class="use-card">
+        <h4>Agricultural Planning</h4>
+        <p>Precipitation and temperature forecasts for irrigation scheduling, frost warnings, and harvest timing across South African farming regions.</p>
+      </div>
+      <div class="use-card">
+        <h4>Supply Chain Logistics</h4>
+        <p>Wind and precipitation forecasts for route planning, delivery scheduling, and warehouse operations across multiple cities.</p>
+      </div>
+      <div class="use-card">
+        <h4>Disaster Preparedness</h4>
+        <p>Multi-source forecast consensus for early warning systems. When providers disagree, the ensemble model provides calibrated uncertainty.</p>
+      </div>
+      <div class="use-card">
+        <h4>Insurance Underwriting</h4>
+        <p>Historical forecast accuracy data per provider, variable, and horizon for parametric insurance product design and risk modeling.</p>
+      </div>
+      <div class="use-card">
+        <h4>Research & Education</h4>
+        <p>Reference implementation of production MLOps patterns: feature engineering, model registry, champion-challenger, data drift monitoring.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="setup">
+  <div class="container">
+    <h2>Quick Start</h2>
+    <h3>Get running in under 10 minutes on free tiers only</h3>
+    <pre><code># 1. Clone
+git clone https://github.com/JepStar990/weather-mlops-forecasts.git
+cd weather-mlops-forecasts
+
+# 2. Set up environment
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your DATABASE_URL and API keys
+
+# 3. Bootstrap database
+psql $DATABASE_URL -f src/db/schema.sql
+python scripts/seed_locations.py
+
+# 4. Smoke test
+python src/etl/ingest_open_meteo.py
+
+# 5. Set up GitHub Secrets for automation:
+#    - DATABASE_URL (Neon connection string)
+#    - DAGSHUB_USERNAME, DAGSHUB_TOKEN (MLflow tracking)
+#    - OPENWEATHER_API_KEY, VISUAL_CROSSING_API_KEY (optional)
+#    - MET_NO_USER_AGENT, NWS_USER_AGENT</code></pre>
+  </div>
+</section>
+
+<section id="api" style="background: var(--blue-50);">
+  <div class="container">
+    <h2>API Reference</h2>
+    <h3>FastAPI endpoints served from Deta Space</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+        <tr><td><code>/health</code></td><td>GET</td><td>Health check — returns <code>{"status":"ok"}</code></td></tr>
+        <tr><td><code>/sources</code></td><td>GET</td><td>Per-source error metrics (RMSE, MAE, MAPE) over last 7 days</td></tr>
+        <tr><td><code>/metrics</code></td><td>GET</td><td>Leaderboard: best source per variable and horizon</td></tr>
+        <tr><td><code>/predict</code></td><td>POST</td><td>Get ensemble predictions — body: <code>{"lat":-26.2,"lon":28.0,"variables":["temp_2m"],"horizons":[1,3,6]}</code></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="tech-stack">
+  <div class="container">
+    <h2>Technology Stack</h2>
+    <h3>Every component runs on a free tier</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num" style="font-size:1.5rem">Python 3.11</div>
+        <div class="label">Core language</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="font-size:1.5rem">Neon</div>
+        <div class="label">Serverless Postgres</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="font-size:1.5rem">DagsHub</div>
+        <div class="label">MLflow tracking</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="font-size:1.5rem">LightGBM</div>
+        <div class="label">Ensemble model</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="font-size:1.5rem">FastAPI</div>
+        <div class="label">Prediction API</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="font-size:1.5rem">Gradio</div>
+        <div class="label">Verification dashboard</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p style="font-size:1.3rem;font-weight:700;color:var(--yellow-400);">Weather MLOps</p>
+    <p style="margin-top:8px;">Production-grade, zero-cost weather forecast MLOps</p>
+    <div class="footer-links">
+      <a href="https://github.com/JepStar990/weather-mlops-forecasts">GitHub</a>
+      <a href="https://dagshub.com/JepStar990/weather-mlops-forecasts">DagsHub (MLflow)</a>
+    </div>
+    <p style="font-size:0.8rem;opacity:0.7;margin-top:16px;">
+      Licensed under MIT. Weather data from Open-Meteo, MET Norway, NWS, OpenWeather, Visual Crossing, Meteostat.<br>
+      Built with free tiers: Neon, DagsHub, GitHub Actions, Hugging Face Spaces, Deta Space.
+    </p>
+  </div>
+</footer>
+
+<script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWidth: true } });</script>
+</body>
+</html>
