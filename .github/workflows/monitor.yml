@@ -7,8 +7,6 @@ on:
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -23,19 +21,3 @@ jobs:
         run: python -m src.jobs.job_monitor_hourly
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Export dashboard data
-        run: python scripts/export_dashboard_data.py
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
-          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
-          PUBLIC_REPO_NAME: ${{ vars.PUBLIC_REPO_NAME }}
-
-      - name: Commit updated dashboard data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/dashboard.json
-          git diff --staged --quiet || git commit -m "chore: update dashboard data"
-          git push
