@@ -1,39 +1,139 @@
 # Weather MLOps: Multi-API Forecast Verification + Ensemble
 
-An end‑to‑end, production‑grade (free‑tier) MLOps system to ingest hourly weather forecasts from multiple providers, ingest observed weather, measure forecast error per source/horizon/variable, train and promote our own ensemble model, and serve predictions via FastAPI with a Gradio verification dashboard.
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://jepstar990.github.io/weather-mlops-forecasts/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF)](https://github.com/JepStar990/weather-mlops-forecasts/actions)
 
-All pipelines run on **free tiers**:
-- **Data**: Open‑Meteo (no key), MET Norway Locationforecast (User‑Agent), weather.gov (US NWS), OpenWeather One Call 3.0 (first 1,000 calls/day free), Visual Crossing (≈1,000 records/day free), Meteostat Python library (observations).
-- **Warehouse**: Neon Serverless Postgres (free for this project).
-- **Experiment Tracking**: DagsHub MLflow-compatible (free for public).
-- **Serving**: Deta Space (FastAPI), Hugging Face Spaces (Gradio).
-- **Orchestration**: GitHub Actions (UTC; off‑hour cron to avoid congestion).
+An end-to-end, production-grade MLOps system to ingest hourly weather forecasts from multiple providers, ingest observed weather, measure forecast error per source/horizon/variable, train and promote our own ensemble model, and serve predictions via FastAPI with a Gradio verification dashboard.
 
-> **South Africa first**: Includes multiple SA locations out-of-the-box (Johannesburg, Cape Town, Durban, Pretoria, Gqeberha, Bloemfontein, Polokwane, Mbombela, East London). Add more anytime via `TARGET_LOCATIONS`.
+> **Portfolio Landing Page**: [jepstar990.github.io/weather-mlops-forecasts/](https://jepstar990.github.io/weather-mlops-forecasts/)
 
 ---
 
-## Overview
+## Architecture
 
----
+```mermaid
+graph TB
+    subgraph "Data Sources"
+        OM[Open-Meteo]
+        MET[MET Norway]
+        OW[OpenWeather]
+        VC[Visual Crossing]
+        NWS[weather.gov]
+        MS[Meteostat Obs]
+    end
+
+    subgraph "Ingestion (GitHub Actions)"
+        ETL[ETL Forecasts<br/>hourly :17 UTC]
+        OBS[Ingest Obs<br/>hourly :47 UTC]
+    end
+
+    subgraph "Neon Serverless Postgres"
+        FCT[(forecasts)]
+        OBT[(observations)]
+        ERR[(errors)]
+        MDL[(models)]
+    end
+
+    subgraph "ML Pipeline"
+        FEAT[Feature Engineering]
+        TRAIN[Train Ensemble]
+        PROMO[Promote Champion]
+    end
+
+    subgraph "Serving"
+        API[FastAPI / Deta Space]
+        DASH[Gradio / Hugging Face]
+    end
+
+    OM --> ETL
+    MET --> ETL
+    OW --> ETL
+    VC --> ETL
+    NWS --> ETL
+    MS --> OBS
+
+    ETL --> FCT
+    OBS --> OBT
+
+    FCT --> FEAT
+    OBT --> FEAT
+    FEAT --> TRAIN
+    TRAIN --> MDL
+    TRAIN --> MLFLOW[DagsHub MLflow]
+    MDL --> PROMO
+
+    FCT --> ERR
+    OBT --> ERR
+    ERR --> LB[Leaderboard]
+
+    FCT --> API
+    API --> DASH
+```
+
+## Pipeline Schedule
+
+| Workflow | Schedule (UTC) | What It Does |
+|---|---|---|
+| `etl.yml` | Hourly :17 | Ingest forecasts from all 5 providers |
+| `predict.yml` | Hourly :27 | Run ensemble model inference |
+| `monitor.yml` | Hourly :37 | Log leaderboard + data volume |
+| `verify.yml` | Hourly :47 | Ingest observations + compute errors |
+| `train.yml` | Daily 03:17 | Train ensemble + promote champion |
+| `prune.yml` | Daily 03:07 | Delete expired data (retention TTL) |
+
+All staggered off the hour to reduce GitHub Actions queue congestion.
+
+## Data Flow
+
+```mermaid
+flowchart LR
+    A[5 Forecast APIs] --> B[(forecasts)]
+    C[Meteostat] --> D[(observations)]
+    B --> E[Feature Matrix]
+    D --> E
+    E --> F[LightGBM Ensemble]
+    F --> G[(forecasts<br/>source=our_model)]
+    B --> H[Error Computation]
+    D --> H
+    H --> I[(errors)]
+    I --> J[Leaderboard]
+    I --> K[Gradio Dashboard]
+    G --> K
+    G --> L[FastAPI /predict]
+```
+
+## All Free Tiers
+
+| Component | Provider | Free Tier Limit |
+|---|---|---|
+| Forecast APIs | Open-Meteo, MET Norway, NWS | No key needed |
+| Forecast APIs | OpenWeather, Visual Crossing | ~1,000 calls/day |
+| Observations | Meteostat Python library | CC BY-NC |
+| Warehouse | Neon Serverless Postgres | 0.5 GB, 100 compute hrs |
+| Experiment Tracking | DagsHub MLflow | Free for public repos |
+| Serving API | Deta Space | Free micro |
+| Dashboard | Hugging Face Spaces | Free Gradio |
+| Orchestration | GitHub Actions | 2,000 min/month |
+| Docs | GitHub Pages | Free |
 
 ## Required Environment Variables
 
-Set in `.env` locally and in GitHub / Spaces / Deta secrets:
-
-- `DATABASE_URL` – Neon connection string
-- `OPENWEATHER_API_KEY` – optional, 1,000 calls/day free
-- `VISUAL_CROSSING_API_KEY` – optional, ~1,000 records/day free
-- `MET_NO_USER_AGENT` – e.g., `your-app/0.1 (email@example.com)`
-- `NWS_USER_AGENT` – same format (used for weather.gov)
-- `DAGSHUB_USERNAME` / `DAGSHUB_TOKEN` – for MLflow tracking
-- `PUBLIC_REPO_NAME` – e.g., `weather-mlops-forecasts`
-- `TARGET_LOCATIONS` – JSON array of locations (default SA cities provided)
-- `VARIABLES` – e.g., `["temp_2m","wind_speed_10m","precipitation"]`
-- `HORIZONS_HOURS` – e.g., `[1,3,6,12,24,48,72]`
-- `LOCAL_TIMEZONE` – for display only (UTC is canonical)
-
----
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | Neon Postgres connection string |
+| `MET_NO_USER_AGENT` | Yes | e.g. `your-app/0.1 (email@example.com)` |
+| `NWS_USER_AGENT` | Yes | Same format |
+| `OPENWEATHER_API_KEY` | No | 1,000 calls/day free |
+| `VISUAL_CROSSING_API_KEY` | No | ~1,000 records/day free |
+| `DAGSHUB_USERNAME` | No | For MLflow tracking |
+| `DAGSHUB_TOKEN` | No | For MLflow tracking |
+| `PUBLIC_REPO_NAME` | No | Default: `weather-mlops-forecasts` |
+| `TARGET_LOCATIONS` | Yes | JSON array of `[{"name":"...","lat":...,"lon":...}]` |
+| `VARIABLES` | Yes | `["temp_2m","wind_speed_10m","precipitation"]` |
+| `HORIZONS_HOURS` | Yes | `[1,3,6,12,24,48,72]` |
+| `LOCAL_TIMEZONE` | No | Default: `Africa/Johannesburg` |
 
 ## Quickstart
 
@@ -41,7 +141,6 @@ Set in `.env` locally and in GitHub / Spaces / Deta secrets:
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Set env
 cp .env.example .env
 # Edit .env with your DATABASE_URL, keys, DagsHub creds, etc.
 
@@ -49,66 +148,155 @@ cp .env.example .env
 psql $DATABASE_URL -f src/db/schema.sql
 python scripts/seed_locations.py
 
-# Smoke test: ingest a provider
+# Smoke test
 python src/etl/ingest_open_meteo.py
-````
+```
 
-***
+## Database Schema
+
+```mermaid
+erDiagram
+    forecasts {
+        bigserial id PK
+        text source
+        float lat
+        float lon
+        text variable
+        timestamptz issue_time
+        timestamptz valid_time
+        int horizon_hours
+        float value
+        text unit
+        timestamptz created_at
+    }
+    observations {
+        bigserial id PK
+        text station_id
+        float lat
+        float lon
+        text variable
+        timestamptz obs_time
+        float value
+        text unit
+        text source
+        timestamptz created_at
+    }
+    errors {
+        bigserial id PK
+        text source
+        text variable
+        timestamptz valid_time
+        int horizon_hours
+        float mae
+        float rmse
+        float mape
+        int n
+        timestamptz created_at
+    }
+    models {
+        bigserial id PK
+        text name
+        text mlflow_run_id
+        jsonb metrics_json
+        timestamptz created_at
+        bool is_champion
+    }
+    forecasts ||--o{ errors : "joined with"
+    observations ||--o{ errors : "for validation"
+    models ||--o{ forecasts : "our_model predictions"
+```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Health check |
+| `/sources` | GET | Error metrics per source (7 days) |
+| `/metrics` | GET | Leaderboard: best source per variable/horizon |
+| `/predict` | POST | Ensemble predictions for lat/lon/variables/horizons |
 
 ## Deployment
 
 ### Neon (DB)
-
-1.  Create a Neon project (free), obtain `DATABASE_URL`.
-2.  Run `src/db/schema.sql`.
-3.  (Optional) Create a read‑only role for dashboards.
+1. Create a Neon project (free), obtain `DATABASE_URL`
+2. Run `src/db/schema.sql`
+3. Optionally create a read-only role for dashboards
 
 ### DagsHub (MLflow)
+1. Create a public repo named `weather-mlops-forecasts`
+2. Generate a token; set `DAGSHUB_USERNAME` & `DAGSHUB_TOKEN`
+3. MLflow tracking URI: `https://dagshub.com/<user>/<repo>.mlflow`
 
-1.  Create a public repo named `weather-mlops-forecasts`.
-2.  Generate a token; set `DAGSHUB_USERNAME` & `DAGSHUB_TOKEN`.
-3.  MLflow tracking URI is `https://dagshub.com/<user>/<repo>.mlflow`.
-
-### Hugging Face Spaces (Gradio)
-
-1.  New Space (Gradio). Copy `src/serve/dashboard/app.py` + minimal utils and `requirements.txt`.
-2.  Set `DATABASE_URL` secret (read-only).
-3.  First charts render after data arrives.
+### Hugging Face Spaces (Gradio Dashboard)
+1. New Space (Gradio). Copy `src/serve/dashboard/app.py` + minimal utils + `requirements.txt`
+2. Set `DATABASE_URL` secret (read-only)
+3. First charts render after data arrives
 
 ### Deta Space (FastAPI)
+1. Create a Deta Space project
+2. Add `src/serve/api/main.py` and `requirements.txt`
+3. Set `DATABASE_URL`
+4. Start: `uvicorn src.serve.api.main:app --host 0.0.0.0 --port 8000`
 
-1.  Create a Deta Space project.
-2.  Add `src/serve/api/main.py` and `requirements.txt`.
-3.  Set `DATABASE_URL`.
-4.  Start command: `uvicorn src.serve.api.main:app --host 0.0.0.0 --port 8000`.
+### GitHub Pages (Documentation)
+1. Go to repo Settings → Pages
+2. Source: Deploy from branch → `main` → `/docs` folder
+3. Landing page available at `https://<user>.github.io/weather-mlops-forecasts/`
 
-***
+## Data Retention
 
-## Scheduling (GitHub Actions)
+To stay within Neon free-tier limits (~0.5 GB):
+- **Forecasts**: 14-day retention (configurable via `FORECAST_RETENTION_DAYS`)
+- **Observations**: 90-day retention
+- **Errors**: 90-day retention
+- Only configured `HORIZONS_HOURS` are stored (not all API-returned hours)
+- Daily prune job runs at 03:07 UTC
 
-*   **ETL (forecasts)**: hourly at **:17** UTC
-*   **Verify (obs + errors)**: hourly at **:47** UTC (≈30 min later)
-*   **Predict (our\_model)**: hourly at **:27** UTC
-*   **Monitor (leaderboard)**: hourly at **:37** UTC
-*   **Train + Promote**: daily at **03:17** UTC
+## Project Structure
 
-> All workflows use Python 3.11. Times avoid the top of the hour to reduce queueing.
+```
+weather-mlops-forecasts/
+├── .github/workflows/        # 6 CI workflows
+│   ├── etl.yml               # Hourly forecast ingestion
+│   ├── verify.yml            # Hourly obs + error compute
+│   ├── predict.yml           # Hourly ensemble inference
+│   ├── monitor.yml           # Hourly leaderboard + volume
+│   ├── train.yml             # Daily train + promote
+│   └── prune.yml             # Daily data retention cleanup
+├── src/
+│   ├── config.py             # All configuration
+│   ├── db/
+│   │   ├── schema.sql        # Postgres schema
+│   │   └── prune.py          # Data retention pruning
+│   ├── etl/                  # 5 forecast + 1 observation ingestors
+│   ├── model/
+│   │   ├── features.py       # Feature engineering
+│   │   ├── train.py          # Model training (LightGBM + Linear)
+│   │   ├── predict.py        # Batch inference
+│   │   ├── evaluate.py       # Weekly CV evaluation
+│   │   └── promote.py        # Champion-challenger promotion
+│   ├── verify/
+│   │   ├── compute_errors.py # Forecast-obs error computation
+│   │   └── leaderboard.py    # Best-source ranking
+│   ├── jobs/                 # Job entry points
+│   ├── serve/
+│   │   ├── api/main.py       # FastAPI prediction API
+│   │   └── dashboard/app.py  # Gradio verification dashboard
+│   └── utils/                # HTTP, DB, time, unit, logging
+├── docs/
+│   └── index.html            # Portfolio landing page
+├── scripts/                  # Bootstrap + seed scripts
+├── requirements.txt
+└── README.md
+```
 
-***
+## Attribution & Data Licenses
 
-## Attribution & Licenses
-
-*   **Open‑Meteo** (free, no key; non‑commercial): <https://open-meteo.com/>
-*   **MET Norway Locationforecast 2.0** (User‑Agent required): <https://api.met.no/weatherapi/locationforecast/2.0/documentation>
-*   **weather.gov** (NWS API): <https://www.weather.gov/documentation/services-web-api>
-*   **OpenWeather One Call 3.0** (1,000 calls/day free): <https://openweathermap.org/price>
-*   **Visual Crossing** (free tier): <https://www.visualcrossing.com/resources/blog/how-do-i-get-free-weather-api-access/>
-*   **Meteostat** (observations; CC BY‑NC): <https://pypi.org/project/meteostat/>
-*   **Neon Serverless Postgres**: <https://neon.com/docs/introduction/plans>
-*   **DagsHub MLflow**: <https://dagshub.com/pricing>
-*   **Hugging Face Spaces**: <https://huggingface.co/docs/hub/en/spaces-overview>
-*   **Deta Space**: <https://fastapi.xiniushu.com/az/deployment/deta/>
+- **Open-Meteo** (free, no key; non-commercial): https://open-meteo.com/
+- **MET Norway Locationforecast 2.0** (User-Agent required): https://api.met.no/
+- **weather.gov** (NWS API): https://www.weather.gov/documentation/services-web-api
+- **OpenWeather One Call 3.0** (1,000 calls/day free): https://openweathermap.org/
+- **Visual Crossing** (free tier): https://www.visualcrossing.com/
+- **Meteostat** (observations; CC BY-NC): https://pypi.org/project/meteostat/
 
 **License**: MIT (with attribution to data providers above).
-
-***
