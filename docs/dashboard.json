@@ -1,0 +1,17 @@
+{
+  "updated_at": null,
+  "neon": {
+    "row_counts": {"forecasts": -1, "observations": -1, "errors": -1, "models": -1},
+    "errors_7d": [],
+    "leaderboard": []
+  },
+  "dagshub": {
+    "mlflow_url": "https://dagshub.com/JepStar990/weather-mlops-forecasts.mlflow",
+    "latest_runs": []
+  },
+  "config": {
+    "variables": ["temp_2m", "wind_speed_10m", "precipitation"],
+    "horizons": [1, 3, 6, 12, 24, 48, 72],
+    "sources": ["open_meteo", "met_no", "openweather", "visual_crossing", "weather_gov", "our_model"]
+  }
+}

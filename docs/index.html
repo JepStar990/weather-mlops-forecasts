@@ -101,6 +101,7 @@
     <div>
       <a href="#about">About</a>
       <a href="#architecture">Architecture</a>
+      <a href="#live-data">Live Data</a>
       <a href="#features">Features</a>
       <a href="#stats">Stats</a>
       <a href="#setup">Setup</a>
@@ -337,6 +338,39 @@ graph TB
   </div>
 </section>
 
+<section id="live-data" style="background: var(--blue-50);">
+  <div class="container">
+    <h2>Live System Data</h2>
+    <h3>Real-time metrics from Neon Postgres, updated hourly via GitHub Actions <span id="live-updated" style="font-size:0.8rem;color:var(--gray-500);"></span></h3>
+
+    <div class="stats-grid" id="live-row-counts">
+      <div class="stat-card"><div class="num" id="count-forecasts">--</div><div class="label">Forecast Rows</div></div>
+      <div class="stat-card"><div class="num" id="count-observations">--</div><div class="label">Observation Rows</div></div>
+      <div class="stat-card"><div class="num" id="count-errors">--</div><div class="label">Error Rows</div></div>
+      <div class="stat-card"><div class="num" id="count-models">--</div><div class="label">Trained Models</div></div>
+    </div>
+
+    <h3 style="text-align:center;margin:40px 0 16px;color:var(--blue-900);">Leaderboard — Best Source per Variable & Horizon</h3>
+    <div class="table-wrap" style="margin-bottom:24px;">
+      <table id="live-leaderboard">
+        <thead><tr><th>Variable</th><th>Horizon (h)</th><th>Best Source</th><th>RMSE</th><th>MAE</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:var(--gray-500);">Waiting for data...</td></tr></tbody>
+      </table>
+    </div>
+
+    <h3 style="text-align:center;margin:40px 0 16px;color:var(--blue-900);">Top Error Metrics (Last 7 Days)</h3>
+    <div class="table-wrap">
+      <table id="live-errors">
+        <thead><tr><th>Source</th><th>Variable</th><th>Horizon (h)</th><th>RMSE</th><th>MAE</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:var(--gray-500);">Waiting for data...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div id="dagshub-link" style="text-align:center;margin-top:24px;"></div>
+    <div id="live-error" style="text-align:center;color:var(--gray-500);margin-top:8px;"></div>
+  </div>
+</section>
+
 <section id="features">
   <div class="container">
     <h2>Key Features</h2>
@@ -490,6 +524,88 @@ python src/etl/ingest_open_meteo.py
   </div>
 </footer>
 
-<script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWidth: true } });</script>
+<script>
+mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWidth: true } });
+
+(function() {
+  var DATA_URL = 'dashboard.json';
+
+  function fmt(n, dec) {
+    if (n === null || n === undefined || isNaN(n)) return '--';
+    return Number(n).toFixed(dec || 0);
+  }
+
+  function renderCounts(neon) {
+    var rc = neon.row_counts || {};
+    var el = function(id, v) {
+      var e = document.getElementById(id);
+      if (e) e.textContent = v >= 0 ? v.toLocaleString() : '--';
+    };
+    el('count-forecasts', rc.forecasts);
+    el('count-observations', rc.observations);
+    el('count-errors', rc.errors);
+    el('count-models', rc.models);
+  }
+
+  function renderTable(tbodyId, rows, cols, emptyMsg) {
+    var tbody = document.querySelector('#' + tbodyId + ' tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;color:var(--gray-500);">' + (emptyMsg || 'No data yet') + '</td></tr>';
+      return;
+    }
+    rows.forEach(function(r) {
+      var tr = document.createElement('tr');
+      cols.forEach(function(k) {
+        var td = document.createElement('td');
+        var v = r[k];
+        td.textContent = typeof v === 'number' ? Number(v).toFixed(3) : (v || '--');
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderLeaderboard(lb) {
+    var rows = (lb || []).map(function(r) {
+      return { variable: r.variable, horizon: r.horizon_hours, best_source: r.best_source, rmse: r.rmse, mae: r.mae };
+    });
+    renderTable('live-leaderboard', rows, ['variable','horizon','best_source','rmse','mae'], 'No leaderboard data yet');
+  }
+
+  function renderErrors(errs) {
+    var rows = (errs || []).slice(0, 20);
+    renderTable('live-errors', rows, ['source','variable','horizon_hours','rmse','mae'], 'No error data yet');
+  }
+
+  function load() {
+    fetch(DATA_URL)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        document.getElementById('live-updated').textContent = d.updated_at ? ' | Last updated: ' + new Date(d.updated_at).toLocaleString() : '';
+        document.getElementById('live-error').textContent = '';
+
+        if (d.neon && !d.neon.error) {
+          renderCounts(d.neon);
+          renderLeaderboard(d.neon.leaderboard);
+          renderErrors(d.neon.errors_7d);
+        } else if (d.neon && d.neon.error) {
+          document.getElementById('live-error').textContent = 'Neon data unavailable (expected before first pipeline run)';
+        }
+
+        if (d.dagshub && d.dagshub.mlflow_url) {
+          document.getElementById('dagshub-link').innerHTML =
+            '<a href="' + d.dagshub.mlflow_url + '" class="btn btn-primary" target="_blank">View MLflow Experiments on DagsHub</a>';
+        }
+      })
+      .catch(function() {
+        document.getElementById('live-error').textContent = 'Live data will appear after the first pipeline run completes.';
+      });
+  }
+
+  load();
+})();
+</script>
 </body>
 </html>
