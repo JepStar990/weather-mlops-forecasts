@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-05-07T08:47:42.122272+00:00",
+  "updated_at": "2026-05-07T14:46:07.304382+00:00",
   "neon": {
     "row_counts": {
-      "forecasts": 3860,
+      "forecasts": 5472,
       "observations": 0,
       "errors": 0,
       "models": -1
