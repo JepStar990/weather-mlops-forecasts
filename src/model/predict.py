@@ -53,11 +53,15 @@ def _sort_lag_cols(cols):
 BATCH_SIZE = 50_000  # adjust to your CI memory budget
 
 def _predict_and_insert_stream(model, Xy: pd.DataFrame, var: str, h: int):
-    # Build features EXACTLY like training
-    vendor_cols = [c for c in ("open_meteo", "met_no", "openweather", "visual_crossing", "weather_gov") if c in Xy.columns]
-    if not vendor_cols:
-        return
-
+    # All possible vendor columns
+    all_vendors = ("open_meteo", "met_no", "openweather", "visual_crossing", "weather_gov")
+    
+    # Ensure all vendor columns exist (even if not in data, fill with NaN)
+    for vendor in all_vendors:
+        if vendor not in Xy.columns:
+            Xy[vendor] = float('nan')
+    
+    vendor_cols = list(all_vendors)
     lag_cols = _sort_lag_cols([c for c in Xy.columns if c.startswith("obs_lag_")])
     feat_cols = vendor_cols + lag_cols + ["hour", "dow"]
 
