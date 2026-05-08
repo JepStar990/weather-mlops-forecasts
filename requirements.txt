@@ -1,6 +1,6 @@
 requests
 pandas
-numpy
+numpy==1.26.4
 python-dateutil
 SQLAlchemy
 psycopg2-binary
