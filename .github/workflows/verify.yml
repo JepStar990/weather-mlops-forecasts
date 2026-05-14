@@ -7,6 +7,8 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +27,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Bootstrap schema
-        run: psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f src/db/schema.sql
+        run: |
+          for i in $(seq 1 5); do
+            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f src/db/schema.sql && break
+            echo "psql attempt $i failed; retrying in $((2**i))s..."
+            sleep $((2**i))
+          done
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

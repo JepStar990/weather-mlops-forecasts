@@ -55,3 +55,7 @@ CREATE TABLE IF NOT EXISTS models (
   created_at TIMESTAMPTZ DEFAULT now(),
   is_champion BOOLEAN DEFAULT FALSE
 );
+
+-- Migration: add metrics_json column to existing models tables that were
+-- created before this column was introduced.
+ALTER TABLE models ADD COLUMN IF NOT EXISTS metrics_json JSONB;
