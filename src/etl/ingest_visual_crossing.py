@@ -29,7 +29,13 @@ def fetch_visual_crossing(lat: float, lon: float, variables: list[str]) -> pd.Da
     }
     data = get_json(url, params=params)
     issue = now_utc()
+    if not data:
+        logger.warning("Visual Crossing returned empty response for %.3f,%.3f", lat, lon)
+        return pd.DataFrame()
     rows = []
+    ndays = len(data.get("days", []))
+    nhours = sum(len(d.get("hours", [])) for d in data.get("days", []))
+    logger.info("Visual Crossing: %d days, %d hours for %.3f,%.3f", ndays, nhours, lat, lon)
     for day in data.get("days", []):
         for hr in day.get("hours", []):
             # VC returns epoch seconds; convert to UTC datetime
