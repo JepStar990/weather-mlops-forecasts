@@ -34,15 +34,21 @@ def get_json(url: str, params: Optional[dict] = None, headers: Optional[dict] = 
             except Exception:
                 pass
 
-    # backoff loop
-    # Exponential backoff (1.5^attempt seconds)
+    # backoff loop (only retry on 429 or 5xx; fail fast on 4xx auth errors)
     backoff = 1.5
     for attempt in range(6):
         try:
             resp = requests.get(url, params=params, headers=headers, timeout=timeout)
+
+            # Fail fast on 401/403 — retrying won't fix bad credentials
+            if resp.status_code in (401, 403):
+                logger.warning("GET %s returned %d (check API key); skipping", url, resp.status_code)
+                return {}
+
             # Retry on 429 or 5xx
             if resp.status_code == 429 or 500 <= resp.status_code < 600:
                 raise requests.HTTPError(f"HTTP {resp.status_code}: {resp.text[:200]}")
+
             resp.raise_for_status()
             data = resp.json()
 
@@ -55,7 +61,19 @@ def get_json(url: str, params: Optional[dict] = None, headers: Optional[dict] = 
 
             return data
 
+        except requests.HTTPError as e:
+            # Only hit for retriable statuses (429/5xx) — backoff and retry
+            sleep = backoff ** attempt
+            logger.warning(
+                "GET %s failed (attempt %d): %s; sleeping %.1fs",
+                url,
+                attempt + 1,
+                str(e),
+                sleep,
+            )
+            time.sleep(sleep)
         except Exception as e:
+            # Connection errors, timeouts — backoff and retry
             sleep = backoff ** attempt
             logger.warning(
                 "GET %s failed (attempt %d): %s; sleeping %.1fs",
@@ -66,5 +84,6 @@ def get_json(url: str, params: Optional[dict] = None, headers: Optional[dict] = 
             )
             time.sleep(sleep)
 
-    # If we reach here, all retries failed
-    raise RuntimeError(f"Failed GET {url} after retries")
+    # All retries exhausted — return empty so one vendor can't break the pipeline
+    logger.warning("GET %s failed after %d attempts; returning empty", url, 6)
+    return {}
