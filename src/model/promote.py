@@ -50,8 +50,14 @@ def main():
             logger.info("Champion (id=%s) is already the latest model; no challenger to evaluate", champion.id)
             return
 
-        if not champion.metrics_json or not challenger.metrics_json:
-            logger.warning("Missing metrics_json on champion or challenger; skipping promotion")
+        if not champion.metrics_json:
+            logger.info("Champion (id=%s) has no metrics_json; auto-promoting challenger", champion.id)
+            conn.execute(text("UPDATE models SET is_champion = FALSE WHERE name = :n"), {"n": name})
+            conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": challenger.id})
+            logger.info("PROMOTED challenger (id=%s) to champion!", challenger.id)
+            return
+        if not challenger.metrics_json:
+            logger.warning("Challenger (id=%s) has no metrics_json; skipping promotion", challenger.id)
             return
 
         champ_m = json.loads(champion.metrics_json) if isinstance(champion.metrics_json, str) else champion.metrics_json

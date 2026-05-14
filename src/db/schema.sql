@@ -59,3 +59,6 @@ CREATE TABLE IF NOT EXISTS models (
 -- Migration: add metrics_json column to existing models tables that were
 -- created before this column was introduced.
 ALTER TABLE models ADD COLUMN IF NOT EXISTS metrics_json JSONB;
+
+-- Migration: backfill NULL metrics_json for any rows created before the column existed.
+UPDATE models SET metrics_json = '{}'::jsonb WHERE metrics_json IS NULL;
