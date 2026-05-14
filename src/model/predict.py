@@ -3,6 +3,7 @@ Use champion model to generate forecasts as source='our_model'.
 For simplicity, use the latest run as champion fallback.
 """
 
+import json
 import os
 import gc
 import re
@@ -28,19 +29,41 @@ warnings.filterwarnings("ignore", message="Detected one or more mismatches")
 warnings.filterwarnings("ignore", message="Found extra inputs")
 
 
-def get_champion_model_name():
+def get_champion_models():
+    """Return dict mapping model_name -> {variable, horizon} for all champions."""
     with db_conn() as conn:
-        row = conn.execute(
-            text("SELECT name FROM models WHERE is_champion=TRUE ORDER BY id DESC LIMIT 1")
-        ).fetchone()
-        if row and row[0]:
-            return row[0]
+        rows = conn.execute(
+            text("SELECT name, metrics_json FROM models WHERE is_champion = TRUE")
+        ).fetchall()
 
-        # Fallback: latest model
-        row = conn.execute(
-            text("SELECT name FROM models ORDER BY id DESC LIMIT 1")
-        ).fetchone()
-        return row[0] if row else None
+    champions = {}
+    for name, metrics_json in rows:
+        try:
+            m = json.loads(metrics_json) if isinstance(metrics_json, str) else (metrics_json or {})
+        except (json.JSONDecodeError, TypeError):
+            m = {}
+        var = m.get("variable")
+        h = m.get("horizon")
+        if var and h is not None:
+            champions[name] = {"variable": var, "horizon": h}
+
+    # Fallback: use latest model per variable/horizon if no champion exists
+    if not champions:
+        with db_conn() as conn:
+            rows = conn.execute(
+                text("SELECT DISTINCT ON (name) name, metrics_json FROM models ORDER BY name, id DESC")
+            ).fetchall()
+        for name, metrics_json in rows:
+            try:
+                m = json.loads(metrics_json) if isinstance(metrics_json, str) else (metrics_json or {})
+            except (json.JSONDecodeError, TypeError):
+                m = {}
+            var = m.get("variable")
+            h = m.get("horizon")
+            if var and h is not None:
+                champions[name] = {"variable": var, "horizon": h}
+
+    return champions
 
 
 def mlflow_setup():
@@ -116,28 +139,42 @@ def _predict_and_insert_stream(model, model_feat_cols, Xy: pd.DataFrame, var: st
 
 
 def main():
-    champion_name = get_champion_model_name()
-    if not champion_name:
-        logger.warning("No champion model found; skipping prediction")
+    champions = get_champion_models()
+    if not champions:
+        logger.warning("No champion models found; skipping prediction")
         return
 
     mlflow_setup()
-    model = mlflow.pyfunc.load_model(f"models:/{champion_name}/Production")
-    logger.info("Loaded champion model: %s", champion_name)
-
-    # Read the model's expected input columns from its signature
-    model_feat_cols = []
-    if model.metadata.signature and model.metadata.signature.inputs:
-        model_feat_cols = [c.name for c in model.metadata.signature.inputs.columns]
-    if not model_feat_cols:
-        # Fallback for models without a signature: use all vendor + lag + calendar cols
-        model_feat_cols = None
 
     for var in CFG.VARIABLES:
         for h in CFG.HORIZONS_HOURS:
+            model_name = f"{var}_H{h}"
+            if model_name not in champions:
+                logger.info("No champion for %s; skipping", model_name)
+                continue
+
             Xy = build_features(var, h)
             if Xy is None or Xy.empty:
                 continue
+
+            try:
+                model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
+            except Exception as e:
+                logger.warning("Failed to load %s: %s; falling back to latest version", model_name, e)
+                try:
+                    model = mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
+                except Exception as e2:
+                    logger.error("Failed to load %s entirely: %s; skipping", model_name, e2)
+                    continue
+
+            logger.info("Loaded champion model: %s", model_name)
+
+            model_feat_cols = []
+            if model.metadata.signature and model.metadata.signature.inputs:
+                model_feat_cols = [c.name for c in model.metadata.signature.inputs.columns]
+            if not model_feat_cols:
+                model_feat_cols = None
+
             _predict_and_insert_stream(model, model_feat_cols, Xy, var, h)
 
 

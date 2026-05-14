@@ -359,6 +359,7 @@
         "mae": 2.632
       }
     ],
+    "champion_models": [],
     "leaderboard": [
       {
         "variable": "precipitation",

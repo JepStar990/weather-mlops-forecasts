@@ -20,7 +20,7 @@ def neon_stats():
     counts = {}
     for table in ("forecasts", "observations", "errors", "models"):
         try:
-            df = fetch_df(f"SELECT GREATEST(reltuples, 0)::bigint AS n FROM pg_class WHERE relname = '{table}'")
+            df = fetch_df(f"SELECT COUNT(*) AS n FROM {table}")
             counts[table] = int(df.iloc[0]["n"]) if len(df) > 0 else 0
         except Exception:
             counts[table] = -1
@@ -48,10 +48,41 @@ def neon_stats():
     except Exception:
         leaderboard = []
 
+    champion_models = None
+    try:
+        df = fetch_df("""
+            SELECT name, metrics_json, mlflow_run_id, created_at
+            FROM models
+            WHERE is_champion = TRUE
+            ORDER BY name
+        """)
+        if not df.empty:
+            champion_models = []
+            for _, row in df.iterrows():
+                try:
+                    m = json.loads(row["metrics_json"]) if isinstance(row["metrics_json"], str) else (row["metrics_json"] or {})
+                except (json.JSONDecodeError, TypeError):
+                    m = {}
+                champion_models.append({
+                    "name": row["name"],
+                    "variable": m.get("variable", ""),
+                    "horizon": m.get("horizon"),
+                    "rmse": m.get("rmse"),
+                    "mae": m.get("mae"),
+                    "algo": m.get("algo", ""),
+                    "run_id": row["mlflow_run_id"],
+                    "created_at": str(row["created_at"]) if row["created_at"] else "",
+                })
+        else:
+            champion_models = []
+    except Exception:
+        champion_models = []
+
     return {
         "row_counts": counts,
-        "errors_7d": errors_7d[:50],  # top 50 only
+        "errors_7d": errors_7d[:50],
         "leaderboard": leaderboard,
+        "champion_models": champion_models,
     }
 
 

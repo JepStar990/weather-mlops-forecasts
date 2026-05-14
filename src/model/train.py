@@ -4,6 +4,7 @@ Train per-variable, per-horizon models.
 - Ensemble: LightGBM if available; fallback to LinearRegression
 - Log to DagsHub (MLflow)
 """
+import json
 import os
 import mlflow
 import tempfile
@@ -135,18 +136,30 @@ def train_one(variable: str, horizon: int):
 
         mlflow.log_params({"features": ",".join(feat)})  # optional for traceability
         
-        from datetime import datetime
-        #model_name = f"model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        model_name = "model"
+        model_name = f"{variable}_H{horizon}"
         mlflow.sklearn.log_model(
             sk_model=model,
-            artifact_path="model",  # for correct artifact folder
+            artifact_path="model",
             registered_model_name=model_name,
             signature=signature,
             input_example=input_example,
         )
+
+        # Store this model row immediately so promote can work on it
+        from src.utils.db_utils import db_conn
+        with db_conn() as conn:
+            conn.execute(
+                text("INSERT INTO models (name, mlflow_run_id, metrics_json, is_champion) VALUES (:n, :r, :m, FALSE)"),
+                {"n": model_name, "r": run_id, "m": json.dumps({
+                    "variable": variable,
+                    "horizon": horizon,
+                    "rmse": round(rmse, 4),
+                    "mae": round(mae, 4),
+                    "algo": algo,
+                })},
+            )
         logger.info("Trained %s H+%d: RMSE=%.3f MAE=%.3f (run_id=%s)", variable, horizon, rmse, mae, run_id)
-        return {"variable": variable, "horizon": horizon, "rmse": rmse, "mae": mae, "run_id": run_id, "features": feat}
+        return {"variable": variable, "horizon": horizon, "rmse": rmse, "mae": mae, "run_id": run_id, "features": feat, "algo": algo}
 
 
 def main():
@@ -162,21 +175,8 @@ def main():
         logger.warning("No models trained")
         return
 
-    agg_rmse = sum(r["rmse"] for r in results) / len(results)
-    agg_mae = sum(r["mae"] for r in results) / len(results)
-    run_id = results[0]["run_id"]
-    name = "model"
-
-    with db_conn() as conn:
-        conn.execute(
-            text("INSERT INTO models (name, mlflow_run_id, metrics_json, is_champion) VALUES (:n, :r, :m, FALSE)"),
-            {"n": name, "r": run_id, "m": json.dumps({
-                "agg_rmse": round(agg_rmse, 4),
-                "agg_mae": round(agg_mae, 4),
-                "per_model": [{k: r[k] for k in ("variable", "horizon", "rmse", "mae")} for r in results],
-            })},
-        )
-    logger.info("Stored model %s (run_id=%s) with agg_rmse=%.4f agg_mae=%.4f", name, run_id, agg_rmse, agg_mae)
+    trained = [(r["variable"], r["horizon"], r["algo"], r["rmse"], r["mae"]) for r in results]
+    logger.info("Trained %d models: %s", len(results), trained)
 
 if __name__ == "__main__":
     main()

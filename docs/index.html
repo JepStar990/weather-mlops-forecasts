@@ -358,6 +358,14 @@ graph TB
       </table>
     </div>
 
+    <h3 style="text-align:center;margin:40px 0 16px;color:var(--blue-900);">Champion Models — Our Trained Ensemble</h3>
+    <div class="table-wrap" style="margin-bottom:24px;">
+      <table id="live-champion-models">
+        <thead><tr><th>Variable</th><th>Horizon (h)</th><th>Algorithm</th><th>RMSE</th><th>MAE</th><th>Last Trained</th></tr></thead>
+        <tbody><tr><td colspan="6" style="text-align:center;color:var(--gray-500);">Waiting for model training...</td></tr></tbody>
+      </table>
+    </div>
+
     <h3 style="text-align:center;margin:40px 0 16px;color:var(--blue-900);">Top Error Metrics (Last 7 Days)</h3>
     <div class="table-wrap">
       <table id="live-errors">
@@ -579,6 +587,24 @@ mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWid
     renderTable('live-errors', rows, ['source','variable','horizon_hours','rmse','mae'], 'No error data yet');
   }
 
+  function renderChampionModels(models) {
+    if (!models || models.length === 0) {
+      renderTable('live-champion-models', [], [], 'No champion models yet — training runs daily at 03:17 UTC');
+      return;
+    }
+    var rows = models.map(function(m) {
+      return {
+        variable: m.variable,
+        horizon: m.horizon,
+        algorithm: m.algo || '--',
+        rmse: m.rmse,
+        mae: m.mae,
+        last_trained: m.created_at ? m.created_at.split('T')[0] : '--'
+      };
+    });
+    renderTable('live-champion-models', rows, ['variable','horizon','algorithm','rmse','mae','last_trained'], '');
+  }
+
   function load() {
     fetch(DATA_URL)
       .then(function(r) { return r.json(); })
@@ -589,6 +615,7 @@ mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWid
         if (d.neon && !d.neon.error) {
           renderCounts(d.neon);
           renderLeaderboard(d.neon.leaderboard);
+          renderChampionModels(d.neon.champion_models);
           renderErrors(d.neon.errors_7d);
         } else if (d.neon && d.neon.error) {
           document.getElementById('live-error').textContent = 'Neon data unavailable (expected before first pipeline run)';
