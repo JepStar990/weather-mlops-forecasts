@@ -68,6 +68,7 @@ def _promote_one(name: str, conn):
     challenger = rows[0]
     if challenger.id == champion.id:
         logger.info("%s: champion (id=%s) is already the latest model; no challenger", name, champion.id)
+        _mlflow_promote(name)
         return
 
     if not champion.metrics_json:
