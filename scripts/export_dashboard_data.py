@@ -20,7 +20,7 @@ def neon_stats():
     counts = {}
     for table in ("forecasts", "observations", "errors", "models"):
         try:
-            df = fetch_df(f"SELECT reltuples::bigint AS n FROM pg_class WHERE relname = '{table}'")
+            df = fetch_df(f"SELECT GREATEST(reltuples, 0)::bigint AS n FROM pg_class WHERE relname = '{table}'")
             counts[table] = int(df.iloc[0]["n"]) if len(df) > 0 else 0
         except Exception:
             counts[table] = -1

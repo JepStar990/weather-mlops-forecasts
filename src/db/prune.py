@@ -56,8 +56,8 @@ def table_row_counts() -> dict[str, int]:
     counts = {}
     with db_conn() as conn:
         for table in TABLE_RETENTION:
-            row = conn.execute(text(f"SELECT reltuples::bigint AS estimate FROM pg_class WHERE relname = '{table}'")).fetchone()
-            counts[table] = row[0] if row and row[0] else 0
+            row = conn.execute(text(f"SELECT COUNT(*) AS n FROM {table}")).fetchone()
+            counts[table] = row[0] if row else 0
     return counts
 
 

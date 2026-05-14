@@ -48,4 +48,4 @@ def leaderboard(days: int = 7) -> pd.DataFrame:
     best = best.rename(columns={"source": "best_source"})
     best = best[["variable", "horizon_hours", "best_source", "rmse", "mae", "mape", "n"]]
     best = best.sort_values(["variable", "horizon_hours"]).reset_index(drop=True)
-
+    return best
