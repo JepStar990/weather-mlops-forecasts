@@ -23,8 +23,8 @@ class Config:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     OPENWEATHER_API_KEY: str = os.getenv("OPENWEATHER_API_KEY", "")
     VISUAL_CROSSING_API_KEY: str = os.getenv("VISUAL_CROSSING_API_KEY", "")
-    MET_NO_USER_AGENT: str = os.getenv("MET_NO_USER_AGENT", "your-app/0.1 (email@example.com)")
-    NWS_USER_AGENT: str = os.getenv("NWS_USER_AGENT", "your-app/0.1 (email@example.com)")
+    MET_NO_USER_AGENT: str = os.getenv("MET_NO_USER_AGENT", "weather-mlops-forecasts/1.0 github.com/JepStar990/weather-mlops-forecasts")
+    NWS_USER_AGENT: str = os.getenv("NWS_USER_AGENT", "weather-mlops-forecasts/1.0 github.com/JepStar990/weather-mlops-forecasts")
 
     DAGSHUB_USERNAME: str = os.getenv("DAGSHUB_USERNAME", "")
     DAGSHUB_TOKEN: str = os.getenv("DAGSHUB_TOKEN", "")
@@ -51,7 +51,7 @@ CFG = Config()
 # API endpoints
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 MET_NO_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
-OPENWEATHER_URL = "https://api.openweathermap.org/data/3.0/onecall"
+OPENWEATHER_URL = "https://api.openweathermap.org/data/2.5/forecast"
 VISUAL_CROSSING_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
 WEATHER_GOV_POINTS_URL = "https://api.weather.gov/points/{lat},{lon}"
 WEATHER_GOV_GRID_URL = "https://api.weather.gov/gridpoints/{office}/{gridX},{gridY}"

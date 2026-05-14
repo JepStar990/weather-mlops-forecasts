@@ -1,6 +1,6 @@
 """
-OpenWeather One Call 3.0 (first 1,000 calls/day free).
-Docs: https://openweathermap.org/price
+OpenWeather 2.5 Forecast (free tier).
+Docs: https://openweathermap.org/forecast5
 """
 import pandas as pd
 from src.config import CFG, OPENWEATHER_URL
@@ -12,6 +12,7 @@ from src.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
+
 def fetch_openweather(lat: float, lon: float, variables: list[str]) -> pd.DataFrame:
     if not CFG.OPENWEATHER_API_KEY:
         logger.warning("OPENWEATHER_API_KEY missing; skipping")
@@ -20,26 +21,25 @@ def fetch_openweather(lat: float, lon: float, variables: list[str]) -> pd.DataFr
         "lat": lat, "lon": lon,
         "appid": CFG.OPENWEATHER_API_KEY,
         "units": "metric",
-        "exclude": "minutely,daily,alerts,current",
     }
     data = get_json(OPENWEATHER_URL, params=params)
     issue = now_utc()
     rows = []
-    for h in data.get("hourly", []):
-        vt = to_utc(h.get("dt"))
+    for entry in data.get("list", []):
+        vt = to_utc(entry.get("dt"))
         if vt is None:
             continue
         for var in variables:
-            if var == "temp_2m" and "temp" in h:
-                v, u = normalize_value("temp_2m", float(h["temp"]), "C")
-            elif var == "wind_speed_10m" and "wind_speed" in h:
-                v, u = normalize_value("wind_speed_10m", float(h["wind_speed"]), "m/s")
+            if var == "temp_2m" and "main" in entry and "temp" in entry["main"]:
+                v, u = normalize_value("temp_2m", float(entry["main"]["temp"]), "C")
+            elif var == "wind_speed_10m" and "wind" in entry and "speed" in entry["wind"]:
+                v, u = normalize_value("wind_speed_10m", float(entry["wind"]["speed"]), "m/s")
             elif var == "precipitation":
                 precip = 0.0
-                if isinstance(h.get("rain"), dict) and "1h" in h["rain"]:
-                    precip += float(h["rain"]["1h"])
-                if isinstance(h.get("snow"), dict) and "1h" in h["snow"]:
-                    precip += float(h["snow"]["1h"])
+                if isinstance(entry.get("rain"), dict) and "3h" in entry["rain"]:
+                    precip += float(entry["rain"]["3h"])
+                if isinstance(entry.get("snow"), dict) and "3h" in entry["snow"]:
+                    precip += float(entry["snow"]["3h"])
                 v, u = normalize_value("precipitation", precip, "mm")
             else:
                 continue
@@ -52,6 +52,7 @@ def fetch_openweather(lat: float, lon: float, variables: list[str]) -> pd.DataFr
             })
     return pd.DataFrame(rows)
 
+
 def main():
     frames = []
     for loc in CFG.TARGET_LOCATIONS:
@@ -60,6 +61,7 @@ def main():
     if not df.empty:
         df = df[df["horizon_hours"].isin(CFG.HORIZONS_HOURS)]
     insert_dataframe(df, "forecasts")
+
 
 if __name__ == "__main__":
     main()

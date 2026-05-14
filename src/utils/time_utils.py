@@ -6,9 +6,11 @@ def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 def to_utc(dt) -> datetime | None:
-    """Coerce dt (str|datetime) to timezone-aware UTC datetime. Returns None if dt is None."""
+    """Coerce dt (str|datetime|epoch seconds) to timezone-aware UTC datetime. Returns None if dt is None."""
     if dt is None:
         return None
+    if isinstance(dt, (int, float)):
+        return datetime.fromtimestamp(dt, tz=timezone.utc)
     if isinstance(dt, str):
         dt = parser.isoparse(dt)
     if dt.tzinfo is None:
