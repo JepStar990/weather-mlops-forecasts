@@ -32,8 +32,10 @@ def fetch_visual_crossing(lat: float, lon: float, variables: list[str]) -> pd.Da
     rows = []
     for day in data.get("days", []):
         for hr in day.get("hours", []):
-            # VC returns local time; specify timezone offset available in 'tzoffset'? Use ISO form if present.
+            # VC returns epoch seconds; convert to UTC datetime
             vt = to_utc(hr.get("datetimeEpoch"))
+            if vt is None:
+                continue
             for var in variables:
                 if var == "temp_2m" and "temp" in hr:
                     v, u = normalize_value("temp_2m", float(hr["temp"]), "C")

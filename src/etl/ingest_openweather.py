@@ -27,6 +27,8 @@ def fetch_openweather(lat: float, lon: float, variables: list[str]) -> pd.DataFr
     rows = []
     for h in data.get("hourly", []):
         vt = to_utc(h.get("dt"))
+        if vt is None:
+            continue
         for var in variables:
             if var == "temp_2m" and "temp" in h:
                 v, u = normalize_value("temp_2m", float(h["temp"]), "C")
