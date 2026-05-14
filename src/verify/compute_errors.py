@@ -34,7 +34,7 @@ def compute():
         "rmse": ((g["f_value"] - g["o_value"])**2).mean() ** 0.5,
         "mape": ( (g["f_value"] - g["o_value"]).abs() / (g["o_value"].abs() + 1e-6) ).mean(),
         "n": len(g),
-    })).reset_index()
+    }), include_groups=False).reset_index()
     return out
 
 def main():
