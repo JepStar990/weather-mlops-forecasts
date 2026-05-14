@@ -3,9 +3,18 @@ Meteostat hourly observations via Point(lat, lon) for each configured location.
 Docs: https://pypi.org/project/meteostat/
 """
 
+import warnings
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from meteostat import Point, Hourly
+
+# Suppress FutureWarning from meteostat's internal use of deprecated
+# pandas parse_dates nested-sequence syntax.
+warnings.filterwarnings(
+    "ignore",
+    message="Support for nested sequences for 'parse_dates'",
+    category=FutureWarning,
+)
 
 from src.config import CFG
 from src.utils.db_utils import insert_dataframe

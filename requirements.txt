@@ -4,7 +4,7 @@ numpy==1.26.4
 python-dateutil
 SQLAlchemy
 psycopg2-binary
-meteostat==1.6.5
+meteostat==1.7.6
 mlflow
 scikit-learn
 lightgbm
