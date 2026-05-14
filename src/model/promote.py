@@ -14,21 +14,42 @@ logger = get_logger(__name__)
 PROMOTION_THRESHOLD = 0.02  # 2%
 
 
-def _mlflow_promote(name: str):
-    """Transition the latest model version for `name` to Production in MLflow."""
+def _mlflow_promote(name: str, run_id: str | None = None):
+    """Transition the model version for `name` to Production in MLflow.
+
+    If run_id is given, only promote the version matching that run.
+    Otherwise promote the latest version in 'None' stage.
+    """
     if not (os.getenv("DAGSHUB_USERNAME") and os.getenv("DAGSHUB_TOKEN")):
         return
     try:
         from mlflow.tracking import MlflowClient
         client = MlflowClient()
-        latest_none = client.get_latest_versions(name, stages=["None"])
-        if latest_none:
-            mv = latest_none[0]
-            client.transition_model_version_stage(
-                name=name, version=mv.version,
-                stage="Production", archive_existing_versions=True,
-            )
-            logger.info("%s: promoted MLflow model version %s to Production", name, mv.version)
+
+        if run_id:
+            # Find the specific version matching this run_id
+            versions = client.search_model_versions(f"name='{name}'")
+            target_version = None
+            for mv in versions:
+                if mv.run_id == run_id and mv.current_stage in ("None", "Staging"):
+                    target_version = mv
+                    break
+            if target_version:
+                client.transition_model_version_stage(
+                    name=name, version=target_version.version,
+                    stage="Production", archive_existing_versions=True,
+                )
+                logger.info("%s: promoted MLflow model version %s to Production (run_id=%s)",
+                            name, target_version.version, run_id)
+        else:
+            latest_none = client.get_latest_versions(name, stages=["None"])
+            if latest_none:
+                mv = latest_none[0]
+                client.transition_model_version_stage(
+                    name=name, version=mv.version,
+                    stage="Production", archive_existing_versions=True,
+                )
+                logger.info("%s: promoted MLflow model version %s to Production", name, mv.version)
     except Exception as e:
         logger.warning("%s: MLflow promotion failed (non-fatal): %s", name, e)
 
@@ -62,13 +83,12 @@ def _promote_one(name: str, conn):
     if not champion:
         conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": rows[0].id})
         logger.info("%s: no champion existed; promoted model id=%s as first champion", name, rows[0].id)
-        _mlflow_promote(name)
+        _mlflow_promote(name, run_id=rows[0].mlflow_run_id)
         return
 
     challenger = rows[0]
     if challenger.id == champion.id:
         logger.info("%s: champion (id=%s) is already the latest model; no challenger", name, champion.id)
-        _mlflow_promote(name)
         return
 
     if not champion.metrics_json:
@@ -76,7 +96,7 @@ def _promote_one(name: str, conn):
         conn.execute(text("UPDATE models SET is_champion = FALSE WHERE name = :n"), {"n": name})
         conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": challenger.id})
         logger.info("%s: PROMOTED challenger (id=%s) to champion!", name, challenger.id)
-        _mlflow_promote(name)
+        _mlflow_promote(name, run_id=challenger.mlflow_run_id)
         return
     if not challenger.metrics_json:
         logger.warning("%s: challenger (id=%s) has no metrics_json; skipping", name, challenger.id)
@@ -96,7 +116,7 @@ def _promote_one(name: str, conn):
         conn.execute(text("UPDATE models SET is_champion = FALSE WHERE name = :n"), {"n": name})
         conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": challenger.id})
         logger.info("%s: PROMOTED challenger (id=%s) to champion!", name, challenger.id)
-        _mlflow_promote(name)
+        _mlflow_promote(name, run_id=challenger.mlflow_run_id)
         return
 
     rmse_imp = better_by(c_rmse, ch_rmse)
@@ -117,7 +137,7 @@ def _promote_one(name: str, conn):
             {"id": challenger.id},
         )
         logger.info("%s: PROMOTED challenger (id=%s) to champion!", name, challenger.id)
-        _mlflow_promote(name)
+        _mlflow_promote(name, run_id=challenger.mlflow_run_id)
     else:
         logger.info("%s: challenger did not beat threshold; keeping champion (id=%s)", name, champion.id)
 
@@ -131,6 +151,16 @@ def main():
         if not names:
             logger.info("No models registered; nothing to promote")
             return
+
+        # Ensure all current champions have their MLflow Production stage set
+        champions = conn.execute(
+            text("SELECT name, mlflow_run_id FROM models WHERE is_champion = TRUE")
+        ).fetchall()
+        for name, run_id in champions:
+            try:
+                _mlflow_promote(name, run_id=run_id)
+            except Exception as e:
+                logger.warning("%s: initial MLflow promotion backfill failed: %s", name, e)
 
         for (name,) in names:
             try:
