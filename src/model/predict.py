@@ -30,38 +30,38 @@ warnings.filterwarnings("ignore", message="Found extra inputs")
 
 
 def get_champion_models():
-    """Return dict mapping model_name -> {variable, horizon} for all champions."""
+    """Return dict mapping model_name -> {variable, horizon, run_id} for all champions."""
     with db_conn() as conn:
         rows = conn.execute(
-            text("SELECT name, metrics_json FROM models WHERE is_champion = TRUE")
+            text("SELECT name, mlflow_run_id, metrics_json FROM models WHERE is_champion = TRUE")
         ).fetchall()
 
     champions = {}
-    for name, metrics_json in rows:
+    for name, run_id, metrics_json in rows:
         try:
             m = json.loads(metrics_json) if isinstance(metrics_json, str) else (metrics_json or {})
         except (json.JSONDecodeError, TypeError):
             m = {}
         var = m.get("variable")
         h = m.get("horizon")
-        if var and h is not None:
-            champions[name] = {"variable": var, "horizon": h}
+        if var and h is not None and run_id:
+            champions[name] = {"variable": var, "horizon": h, "run_id": run_id}
 
     # Fallback: use latest model per variable/horizon if no champion exists
     if not champions:
         with db_conn() as conn:
             rows = conn.execute(
-                text("SELECT DISTINCT ON (name) name, metrics_json FROM models ORDER BY name, id DESC")
+                text("SELECT DISTINCT ON (name) name, mlflow_run_id, metrics_json FROM models ORDER BY name, id DESC")
             ).fetchall()
-        for name, metrics_json in rows:
+        for name, run_id, metrics_json in rows:
             try:
                 m = json.loads(metrics_json) if isinstance(metrics_json, str) else (metrics_json or {})
             except (json.JSONDecodeError, TypeError):
                 m = {}
             var = m.get("variable")
             h = m.get("horizon")
-            if var and h is not None:
-                champions[name] = {"variable": var, "horizon": h}
+            if var and h is not None and run_id:
+                champions[name] = {"variable": var, "horizon": h, "run_id": run_id}
 
     return champions
 
@@ -157,15 +157,12 @@ def main():
             if Xy is None or Xy.empty:
                 continue
 
+            run_id = champions[model_name]["run_id"]
             try:
-                model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
+                model = mlflow.pyfunc.load_model(f"runs:/{run_id}/model")
             except Exception as e:
-                logger.warning("Failed to load %s: %s; falling back to latest version", model_name, e)
-                try:
-                    model = mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
-                except Exception as e2:
-                    logger.error("Failed to load %s entirely: %s; skipping", model_name, e2)
-                    continue
+                logger.error("Failed to load %s (run_id=%s): %s; skipping", model_name, run_id, e)
+                continue
 
             logger.info("Loaded champion model: %s", model_name)
 
