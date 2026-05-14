@@ -23,7 +23,13 @@ def _mlflow_promote(name: str, run_id: str | None = None):
     if not (os.getenv("DAGSHUB_USERNAME") and os.getenv("DAGSHUB_TOKEN")):
         return
     try:
+        import mlflow
         from mlflow.tracking import MlflowClient
+
+        # Ensure tracking URI points to DagsHub, not local filesystem
+        tracking_uri = f"https://dagshub.com/{os.getenv('DAGSHUB_USERNAME')}/{os.getenv('PUBLIC_REPO_NAME', 'weather-mlops-forecasts')}.mlflow"
+        mlflow.set_tracking_uri(tracking_uri)
+
         client = MlflowClient()
 
         if run_id:
