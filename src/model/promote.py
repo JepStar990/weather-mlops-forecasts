@@ -4,6 +4,7 @@ If the challenger outperforms the champion by >2% on both aggregated
 RMSE and MAE, promote it. Otherwise keep the current champion.
 """
 import json
+import os
 from sqlalchemy import text
 from src.utils.db_utils import db_conn
 from src.utils.logging_utils import get_logger
@@ -11,6 +12,25 @@ from src.utils.logging_utils import get_logger
 logger = get_logger(__name__)
 
 PROMOTION_THRESHOLD = 0.02  # 2%
+
+
+def _mlflow_promote(name: str):
+    """Transition the latest model version for `name` to Production in MLflow."""
+    if not (os.getenv("DAGSHUB_USERNAME") and os.getenv("DAGSHUB_TOKEN")):
+        return
+    try:
+        from mlflow.tracking import MlflowClient
+        client = MlflowClient()
+        latest_none = client.get_latest_versions(name, stages=["None"])
+        if latest_none:
+            mv = latest_none[0]
+            client.transition_model_version_stage(
+                name=name, version=mv.version,
+                stage="Production", archive_existing_versions=True,
+            )
+            logger.info("%s: promoted MLflow model version %s to Production", name, mv.version)
+    except Exception as e:
+        logger.warning("%s: MLflow promotion failed (non-fatal): %s", name, e)
 
 
 def better_by(champion_val: float, challenger_val: float) -> float:
@@ -42,6 +62,7 @@ def _promote_one(name: str, conn):
     if not champion:
         conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": rows[0].id})
         logger.info("%s: no champion existed; promoted model id=%s as first champion", name, rows[0].id)
+        _mlflow_promote(name)
         return
 
     challenger = rows[0]
@@ -54,6 +75,7 @@ def _promote_one(name: str, conn):
         conn.execute(text("UPDATE models SET is_champion = FALSE WHERE name = :n"), {"n": name})
         conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": challenger.id})
         logger.info("%s: PROMOTED challenger (id=%s) to champion!", name, challenger.id)
+        _mlflow_promote(name)
         return
     if not challenger.metrics_json:
         logger.warning("%s: challenger (id=%s) has no metrics_json; skipping", name, challenger.id)
@@ -73,6 +95,7 @@ def _promote_one(name: str, conn):
         conn.execute(text("UPDATE models SET is_champion = FALSE WHERE name = :n"), {"n": name})
         conn.execute(text("UPDATE models SET is_champion = TRUE WHERE id = :id"), {"id": challenger.id})
         logger.info("%s: PROMOTED challenger (id=%s) to champion!", name, challenger.id)
+        _mlflow_promote(name)
         return
 
     rmse_imp = better_by(c_rmse, ch_rmse)
@@ -93,23 +116,7 @@ def _promote_one(name: str, conn):
             {"id": challenger.id},
         )
         logger.info("%s: PROMOTED challenger (id=%s) to champion!", name, challenger.id)
-
-        import os as _os
-        import mlflow as _mlflow
-        if _os.getenv("DAGSHUB_USERNAME") and _os.getenv("DAGSHUB_TOKEN"):
-            from mlflow.tracking import MlflowClient
-            client = MlflowClient()
-            try:
-                latest_none = client.get_latest_versions(name, stages=["None"])
-                if latest_none:
-                    mv = latest_none[0]
-                    client.transition_model_version_stage(
-                        name=name, version=mv.version,
-                        stage="Production", archive_existing_versions=True,
-                    )
-                    logger.info("%s: promoted MLflow model version %s to Production", name, mv.version)
-            except Exception as e:
-                logger.warning("%s: MLflow promotion failed (non-fatal): %s", name, e)
+        _mlflow_promote(name)
     else:
         logger.info("%s: challenger did not beat threshold; keeping champion (id=%s)", name, champion.id)
 
