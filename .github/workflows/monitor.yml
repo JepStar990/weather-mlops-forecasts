@@ -1,4 +1,4 @@
-name: Monitor Hourly
+name: Monitor 4-Hourly
 on:
   schedule:
     - cron: "7 */4 * * *"   # every 4 hours at :07
