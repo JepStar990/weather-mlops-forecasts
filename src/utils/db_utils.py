@@ -23,6 +23,10 @@ def _is_quota_error(exc: Exception) -> bool:
     return QUOTA_EXCEEDED_MSG in str(exc).lower()
 
 
+class QuotaExceededError(RuntimeError):
+    """Raised when Neon data transfer quota is exceeded — job should exit gracefully."""
+
+
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
@@ -45,7 +49,7 @@ def get_engine() -> Engine:
             except RETRY_EXCEPTIONS as e:
                 if _is_quota_error(e):
                     _engine = None
-                    raise RuntimeError(
+                    raise QuotaExceededError(
                         "Neon data transfer quota exceeded — skipping until quota resets"
                     ) from e
                 if attempt == MAX_RETRIES:
@@ -64,9 +68,6 @@ def db_conn():
     eng = get_engine()
     with eng.begin() as conn:
         yield conn
-
-class QuotaExceededError(RuntimeError):
-    """Raised when Neon data transfer quota is exceeded — job should exit gracefully."""
 
 
 def insert_dataframe(df: pd.DataFrame, table: str, dtype: Mapping | None = None, chunksize: int = 1000):
