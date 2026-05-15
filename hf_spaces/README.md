@@ -10,5 +10,3 @@
    - Copy minimal utils into Space, or
    - Add the repo as a submodule or package. Easiest: copy `src/verify/leaderboard.py`, `src/utils/db_utils.py`, `src/utils/logging_utils.py`.
 5. Set Space to public. First render will occur once data flows.
-
->

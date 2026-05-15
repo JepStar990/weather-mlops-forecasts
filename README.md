@@ -49,14 +49,15 @@ graph TD
 
 | Workflow | Schedule (UTC) | What It Does |
 |---|---|---|
+| `prune.yml` | Daily 00:07 | Delete expired data (retention TTL) |
+| `train.yml` | Daily 00:17 | Train ensemble + promote champion |
 | `etl.yml` | Hourly :17 | Ingest forecasts from all 5 providers |
 | `predict.yml` | Hourly :27 | Run ensemble model inference |
-| `monitor.yml` | Hourly :37 | Log leaderboard + data volume |
 | `verify.yml` | Hourly :47 | Ingest observations + compute errors |
-| `train.yml` | Daily 03:17 | Train ensemble + promote champion |
-| `prune.yml` | Daily 03:07 | Delete expired data (retention TTL) |
+| `monitor.yml` | Every 4h :07 | Log leaderboard + data volume |
+| `dashboard-export.yml` | Every 6h :07 | Export dashboard JSON for GitHub Pages |
 
-All staggered off the hour to reduce GitHub Actions queue congestion.
+Daily jobs run at 00:xx UTC to beat the Neon free-tier data transfer quota window. All jobs are staggered and will exit gracefully (code 0) with a clear log message when the quota is exceeded, rather than failing noisily.
 
 ## Data Flow
 
@@ -84,7 +85,7 @@ graph LR
 | Forecast APIs | Open-Meteo, MET Norway, NWS | No key needed |
 | Forecast APIs | OpenWeather, Visual Crossing | ~1,000 calls/day |
 | Observations | Meteostat Python library | CC BY-NC |
-| Warehouse | Neon Serverless Postgres | 0.5 GB, 100 compute hrs |
+| Warehouse | Neon Serverless Postgres | 0.5 GB, 5 GB/month data transfer, 100 compute hrs |
 | Experiment Tracking | DagsHub MLflow | Free for public repos |
 | Serving API | Deta Space | Free micro |
 | Dashboard | Hugging Face Spaces | Free Gradio |
@@ -107,6 +108,13 @@ graph LR
 | `VARIABLES` | Yes | `["temp_2m","wind_speed_10m","precipitation"]` |
 | `HORIZONS_HOURS` | Yes | `[1,3,6,12,24,48,72]` |
 | `LOCAL_TIMEZONE` | No | Default: `Africa/Johannesburg` |
+| `FORECAST_RETENTION_DAYS` | No | Default: `14` (days to keep forecast rows) |
+| `OBSERVATION_RETENTION_DAYS` | No | Default: `90` |
+| `ERROR_RETENTION_DAYS` | No | Default: `90` |
+| `PRUNE_BATCH_SIZE` | No | Default: `5000` (rows per DELETE batch) |
+| `REQUESTS_CONCURRENCY` | No | Default: `4` |
+| `REQUESTS_TIMEOUT` | No | Default: `30` (seconds) |
+| `REQUESTS_CACHE_TTL_SECONDS` | No | Default: `600` |
 
 ## Quickstart
 
@@ -213,26 +221,40 @@ erDiagram
 2. Source: Deploy from branch → `main` → `/docs` folder
 3. Landing page available at `https://<user>.github.io/weather-mlops-forecasts/`
 
-## Data Retention
+## Data Retention & Quota Management
 
-To stay within Neon free-tier limits (~0.5 GB):
-- **Forecasts**: 14-day retention (configurable via `FORECAST_RETENTION_DAYS`)
-- **Observations**: 90-day retention
-- **Errors**: 90-day retention
+To stay within Neon free-tier limits (~0.5 GB storage, 5 GB/month data transfer):
+
+**Retention (configurable via env vars):**
+- **Forecasts**: 14-day retention (`FORECAST_RETENTION_DAYS`)
+- **Observations**: 90-day retention (`OBSERVATION_RETENTION_DAYS`)
+- **Errors**: 90-day retention (`ERROR_RETENTION_DAYS`)
 - Only configured `HORIZONS_HOURS` are stored (not all API-returned hours)
-- Daily prune job runs at 03:07 UTC
+- Daily prune job runs at 00:07 UTC, before the data transfer quota builds up
+
+**Data transfer optimizations:**
+- Verification JOIN and feature-building queries use 24–48h time bounds to avoid full-table scans
+- Row counts use `pg_class.reltuples` catalog estimates instead of `COUNT(*)` scans
+- Observation ingestion fetches 24h windows and uses `ON CONFLICT DO NOTHING` to skip duplicates
+- Compound indexes on `(variable, source, valid_time)` and `(variable, obs_time)` reduce seq scans
+- Unique index on `observations(lat, lon, variable, obs_time, source)` prevents duplicate rows
+
+**Quota exceeded behavior:**
+When Neon's monthly data transfer quota is exhausted, all jobs exit gracefully (code 0) with `Skipping run — Neon data transfer quota exceeded`. The GitHub Actions workflows show green (success) rather than red (failure), and resume normally after the quota resets. The dashboard export and GitHub Pages deploy continue to work since they read from cached data.
 
 ## Project Structure
 
 ```
 weather-mlops-forecasts/
-├── .github/workflows/        # 6 CI workflows
+├── .github/workflows/        # 8 CI workflows
 │   ├── etl.yml               # Hourly forecast ingestion
 │   ├── verify.yml            # Hourly obs + error compute
 │   ├── predict.yml           # Hourly ensemble inference
-│   ├── monitor.yml           # Hourly leaderboard + volume
-│   ├── train.yml             # Daily train + promote
-│   └── prune.yml             # Daily data retention cleanup
+│   ├── monitor.yml           # Every 4h leaderboard + volume
+│   ├── train.yml             # Daily train + promote (00:17)
+│   ├── prune.yml             # Daily data retention (00:07)
+│   ├── dashboard-export.yml  # Every 6h dashboard JSON export
+│   └── pages.yml             # Deploy docs/ to GitHub Pages
 ├── src/
 │   ├── config.py             # All configuration
 │   ├── db/

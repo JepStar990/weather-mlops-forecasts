@@ -9,5 +9,6 @@
 
 Endpoints:
 - `GET /health` → `{"status":"ok"}`
-- `GET /metrics` → leaderboard (last 7 days- `GET /metrics` → leaderboard (last 7 days)
+- `GET /metrics` → leaderboard (last 7 days)
 - `GET /sources` → per-source metrics
+- `POST /predict` → ensemble forecast for given lat/lon/variables/horizons
