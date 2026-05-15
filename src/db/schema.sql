@@ -46,6 +46,15 @@ CREATE INDEX IF NOT EXISTS idx_forecasts_valid_time ON forecasts(valid_time);
 CREATE INDEX IF NOT EXISTS idx_observations_obs_time ON observations(obs_time);
 CREATE INDEX IF NOT EXISTS idx_errors_valid_time ON errors(valid_time);
 
+-- Compound indexes for common query patterns (reduce seq scans)
+CREATE INDEX IF NOT EXISTS idx_forecasts_var_src_time ON forecasts(variable, source, valid_time);
+CREATE INDEX IF NOT EXISTS idx_forecasts_var_valid ON forecasts(variable, valid_time);
+CREATE INDEX IF NOT EXISTS idx_observations_var_obs ON observations(variable, obs_time);
+CREATE INDEX IF NOT EXISTS idx_errors_var_horiz_time ON errors(variable, horizon_hours, valid_time);
+
+-- Prevent duplicate observation rows (hourly re-ingestion)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_observations_unique ON observations(lat, lon, variable, obs_time, source);
+
 -- Lightweight model registry pointer (canonical is DagsHub/MLflow)
 CREATE TABLE IF NOT EXISTS models (
   id BIGSERIAL PRIMARY KEY,

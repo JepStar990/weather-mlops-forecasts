@@ -1,7 +1,7 @@
 name: Monitor Hourly
 on:
   schedule:
-    - cron: "37 * * * *"   # hourly at :37 UTC
+    - cron: "7 */4 * * *"   # every 4 hours at :07
   workflow_dispatch: {}
 
 jobs:

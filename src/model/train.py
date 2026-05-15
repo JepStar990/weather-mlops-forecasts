@@ -172,8 +172,7 @@ def main():
                 results.append(r)
 
     if not results:
-        logger.warning("No models trained")
-        return
+        raise RuntimeError("No models trained — no variable/horizon combos produced valid data")
 
     trained = [(r["variable"], r["horizon"], r["algo"], r["rmse"], r["mae"]) for r in results]
     logger.info("Trained %d models: %s", len(results), trained)

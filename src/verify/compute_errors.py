@@ -13,10 +13,12 @@ SQL_JOIN = """
 WITH f AS (
   SELECT source, lat, lon, variable, valid_time, horizon_hours, value AS f_value
   FROM forecasts
+  WHERE valid_time >= now() - interval '24 hours'
 ),
 o AS (
   SELECT lat, lon, variable, obs_time AS valid_time, value AS o_value
   FROM observations
+  WHERE obs_time >= now() - interval '24 hours'
 )
 SELECT f.source, f.variable, f.valid_time, f.horizon_hours, f.f_value, o.o_value
 FROM f JOIN o

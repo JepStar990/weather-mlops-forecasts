@@ -1,4 +1,5 @@
 from src.utils.logging_utils import get_logger
+from src.utils.db_utils import QuotaExceededError
 from src.verify.leaderboard import leaderboard
 from src.db.prune import table_row_counts
 
@@ -19,4 +20,8 @@ def main() -> None:
     logger.info("Leaderboard (last 7 days):\n%s", lb.to_string(index=False))
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except QuotaExceededError:
+        logger.warning("Skipping run — Neon data transfer quota exceeded")
+        exit(0)

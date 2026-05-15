@@ -146,6 +146,9 @@ def main():
 
     mlflow_setup()
 
+    success_count = 0
+    fail_count = 0
+
     for var in CFG.VARIABLES:
         for h in CFG.HORIZONS_HOURS:
             model_name = f"{var}_H{h}"
@@ -162,6 +165,7 @@ def main():
                 model = mlflow.pyfunc.load_model(f"runs:/{run_id}/model")
             except Exception as e:
                 logger.error("Failed to load %s (run_id=%s): %s; skipping", model_name, run_id, e)
+                fail_count += 1
                 continue
 
             logger.info("Loaded champion model: %s", model_name)
@@ -173,6 +177,12 @@ def main():
                 model_feat_cols = None
 
             _predict_and_insert_stream(model, model_feat_cols, Xy, var, h)
+            success_count += 1
+
+    if success_count == 0 and fail_count > 0:
+        raise RuntimeError("All model loads failed — check MLflow connectivity and champion run_ids")
+    elif success_count == 0:
+        logger.warning("No predictions generated — no model/horizon combos with data")
 
 
 if __name__ == "__main__":

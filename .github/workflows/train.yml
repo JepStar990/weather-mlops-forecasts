@@ -1,7 +1,7 @@
 name: Train Daily
 on:
   schedule:
-    - cron: "17 3 * * *"   # daily 03:17 UTC
+    - cron: "17 0 * * *"   # daily 00:17 UTC (right after prune)
   workflow_dispatch: {}
 
 jobs:

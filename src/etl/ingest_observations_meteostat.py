@@ -17,7 +17,7 @@ warnings.filterwarnings(
 )
 
 from src.config import CFG
-from src.utils.db_utils import insert_dataframe
+from src.utils.db_utils import insert_dataframe_dedup
 from src.utils.logging_utils import get_logger
 from src.utils.unit_utils import normalize_value
 
@@ -26,12 +26,12 @@ logger = get_logger(__name__)
 
 def fetch_obs(lat: float, lon: float) -> pd.DataFrame:
     """
-    Fetch the last 7 days of hourly observations near the given lat/lon.
+    Fetch the last 24 hours of hourly observations near the given lat/lon.
     Meteostat expects naive datetimes for start/end. We'll convert to UTC after fetch.
     """
     # Use naive datetimes (no tzinfo) as required by meteostat
     end = datetime.utcnow().replace(minute=0, second=0, microsecond=0)   # naive
-    start = end - timedelta(days=7)                                      # naive
+    start = end - timedelta(days=1)                                      # naive
 
     p = Point(lat, lon)
 
@@ -103,7 +103,7 @@ def main():
         frames.append(fetch_obs(loc["lat"], loc["lon"]))
 
     df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-    inserted = insert_dataframe(df, "observations")
+    inserted = insert_dataframe_dedup(df, "observations", ["lat", "lon", "variable", "obs_time", "source"])
     logger.info("Inserted %d observation rows", inserted)
 
 

@@ -107,11 +107,16 @@ def main():
             logger.info("No models registered; nothing to promote")
             return
 
+        errors = 0
         for (name,) in names:
             try:
                 _promote_one(name, conn)
             except Exception as e:
                 logger.error("%s: promotion failed: %s", name, e)
+                errors += 1
+
+        if errors == len(names) and errors > 0:
+            raise RuntimeError("All promotions failed — check DB connectivity and model data")
 
 
 if __name__ == "__main__":

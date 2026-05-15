@@ -1,7 +1,7 @@
 name: Prune Old Data
 on:
   schedule:
-    - cron: "7 3 * * *"   # daily at 03:07 UTC (before train)
+    - cron: "7 0 * * *"   # daily at 00:07 UTC (before quota builds up)
   workflow_dispatch: {}
 
 jobs:

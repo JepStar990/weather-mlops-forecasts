@@ -16,6 +16,7 @@ def get_vendor_matrix(variable: str, horizon: int) -> pd.DataFrame:
     FROM forecasts
     WHERE variable = :variable
     AND source IN ('open_meteo','met_no','openweather','visual_crossing','weather_gov')
+    AND valid_time >= now() - interval '24 hours'
     """
     df = fetch_df(sql, {"variable": variable})
     if df.empty:
@@ -35,6 +36,7 @@ def get_obs_lags(variable: str, lags=(1,3,6)) -> pd.DataFrame:
     SELECT lat, lon, obs_time, value
     FROM observations
     WHERE variable = :variable
+    AND obs_time >= now() - interval '48 hours'
     """
     df = fetch_df(sql, {"variable": variable}).rename(columns={"obs_time":"valid_time"})
     if df.empty: return df
@@ -70,6 +72,7 @@ def build_features(variable: str, horizon: int) -> pd.DataFrame:
     SELECT lat, lon, obs_time AS obs_time, value AS y
     FROM observations
     WHERE variable = :variable
+    AND obs_time >= now() - interval '48 hours'
     """
     ydf = fetch_df(ysql, {"variable": variable})
     if ydf.empty:

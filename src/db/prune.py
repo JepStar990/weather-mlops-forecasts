@@ -56,7 +56,10 @@ def table_row_counts() -> dict[str, int]:
     counts = {}
     with db_conn() as conn:
         for table in TABLE_RETENTION:
-            row = conn.execute(text(f"SELECT COUNT(*) AS n FROM {table}")).fetchone()
+            row = conn.execute(
+                text("SELECT reltuples::bigint AS n FROM pg_class WHERE relname = :tbl"),
+                {"tbl": table},
+            ).fetchone()
             counts[table] = row[0] if row else 0
     return counts
 
