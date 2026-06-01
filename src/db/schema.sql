@@ -52,6 +52,18 @@ CREATE INDEX IF NOT EXISTS idx_forecasts_var_valid ON forecasts(variable, valid_
 CREATE INDEX IF NOT EXISTS idx_observations_var_obs ON observations(variable, obs_time);
 CREATE INDEX IF NOT EXISTS idx_errors_var_horiz_time ON errors(variable, horizon_hours, valid_time);
 
+-- Remove any pre-existing duplicate observation rows before creating unique index
+DELETE FROM observations
+WHERE ctid IN (
+  SELECT ctid FROM (
+    SELECT ctid, ROW_NUMBER() OVER (
+      PARTITION BY lat, lon, variable, obs_time, source ORDER BY created_at DESC
+    ) AS rn
+    FROM observations
+  ) ranked
+  WHERE ranked.rn > 1
+);
+
 -- Prevent duplicate observation rows (hourly re-ingestion)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_observations_unique ON observations(lat, lon, variable, obs_time, source);
 

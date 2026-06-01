@@ -87,13 +87,14 @@ def insert_dataframe_dedup(df: pd.DataFrame, table: str, conflict_cols: list[str
     eng = get_engine()
     tmp = f"_tmp_{table}"
     conflict_clause = ", ".join(conflict_cols)
+    cols = ", ".join(df.columns)  # explicit column list avoids type mismatch with auto-increment id
     total = 0
     for start in range(0, len(df), chunksize):
         chunk = df.iloc[start:start + chunksize]
         with eng.begin() as conn:
             chunk.to_sql(tmp, conn, if_exists="replace", index=False, method="multi")
             result = conn.execute(
-                text(f"INSERT INTO {table} SELECT * FROM {tmp} ON CONFLICT ({conflict_clause}) DO NOTHING"),
+                text(f"INSERT INTO {table} ({cols}) SELECT {cols} FROM {tmp} ON CONFLICT ({conflict_clause}) DO NOTHING"),
             )
             conn.execute(text(f"DROP TABLE IF EXISTS {tmp}"))
             total += result.rowcount

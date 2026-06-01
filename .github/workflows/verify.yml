@@ -28,11 +28,19 @@ jobs:
 
       - name: Bootstrap schema
         run: |
+          success=false
           for i in $(seq 1 5); do
-            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f src/db/schema.sql && break
+            if psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f src/db/schema.sql; then
+              success=true
+              break
+            fi
             echo "psql attempt $i failed; retrying in $((2**i))s..."
             sleep $((2**i))
           done
+          if [ "$success" = false ]; then
+            echo "psql failed after 5 attempts"
+            exit 1
+          fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
