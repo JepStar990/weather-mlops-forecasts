@@ -1,15 +1,236 @@
 {
-  "updated_at": "2026-05-31T19:39:21.741814+00:00",
+  "updated_at": "2026-06-01T05:10:24.163008+00:00",
   "neon": {
     "row_counts": {
-      "forecasts": -1,
-      "observations": -1,
-      "errors": -1,
-      "models": -1
+      "forecasts": 0,
+      "observations": 36504,
+      "errors": 34601,
+      "models": 120
     },
     "errors_7d": [],
     "leaderboard": [],
-    "champion_models": []
+    "champion_models": [
+      {
+        "name": "model",
+        "variable": "",
+        "horizon": null,
+        "rmse": null,
+        "mae": null,
+        "algo": "",
+        "run_id": "6981f951014e4df193f1aa9b0d3d382e",
+        "created_at": "2026-05-14 20:36:50.067283+00:00"
+      },
+      {
+        "name": "precipitation_H1",
+        "variable": "precipitation",
+        "horizon": 1,
+        "rmse": 0.0662,
+        "mae": 0.0582,
+        "algo": "lightgbm",
+        "run_id": "0f351a1e08be4f878df69b0a143e46b9",
+        "created_at": "2026-05-14 22:08:08.768314+00:00"
+      },
+      {
+        "name": "precipitation_H12",
+        "variable": "precipitation",
+        "horizon": 12,
+        "rmse": 0.1378,
+        "mae": 0.044,
+        "algo": "lightgbm",
+        "run_id": "a730bcd8a7614cbea53d93bc3291ec42",
+        "created_at": "2026-05-14 22:08:56.834080+00:00"
+      },
+      {
+        "name": "precipitation_H24",
+        "variable": "precipitation",
+        "horizon": 24,
+        "rmse": 0.0834,
+        "mae": 0.0186,
+        "algo": "lightgbm",
+        "run_id": "b68dd751362041daaf9e87a1b7ef3c0d",
+        "created_at": "2026-05-14 22:09:16.755542+00:00"
+      },
+      {
+        "name": "precipitation_H3",
+        "variable": "precipitation",
+        "horizon": 3,
+        "rmse": 0.1294,
+        "mae": 0.1102,
+        "algo": "lightgbm",
+        "run_id": "843162103262450c8ade8b70bdddef35",
+        "created_at": "2026-05-14 22:08:27.763499+00:00"
+      },
+      {
+        "name": "precipitation_H48",
+        "variable": "precipitation",
+        "horizon": 48,
+        "rmse": 0.0895,
+        "mae": 0.0153,
+        "algo": "lightgbm",
+        "run_id": "2af30d69640742ee93a1c329aef7009e",
+        "created_at": "2026-05-14 22:09:37.853551+00:00"
+      },
+      {
+        "name": "precipitation_H6",
+        "variable": "precipitation",
+        "horizon": 6,
+        "rmse": 0.0644,
+        "mae": 0.0642,
+        "algo": "lightgbm",
+        "run_id": "9856f05842dd4c138421a9177cf68c8f",
+        "created_at": "2026-05-14 22:08:43.765898+00:00"
+      },
+      {
+        "name": "precipitation_H72",
+        "variable": "precipitation",
+        "horizon": 72,
+        "rmse": 0.0794,
+        "mae": 0.0174,
+        "algo": "lightgbm",
+        "run_id": "bee822301baf48d698e09ec836998449",
+        "created_at": "2026-05-14 22:09:50.929676+00:00"
+      },
+      {
+        "name": "temp_2m_H1",
+        "variable": "temp_2m",
+        "horizon": 1,
+        "rmse": 0.611,
+        "mae": 0.4453,
+        "algo": "lightgbm",
+        "run_id": "b025066dcd8c4281be0230b6cc189073",
+        "created_at": "2026-05-14 22:04:17.821440+00:00"
+      },
+      {
+        "name": "temp_2m_H12",
+        "variable": "temp_2m",
+        "horizon": 12,
+        "rmse": 1.0387,
+        "mae": 0.7845,
+        "algo": "lightgbm",
+        "run_id": "7bfdfbed49a14bf5967e8d225c42c559",
+        "created_at": "2026-05-14 22:05:02.144808+00:00"
+      },
+      {
+        "name": "temp_2m_H24",
+        "variable": "temp_2m",
+        "horizon": 24,
+        "rmse": 0.9745,
+        "mae": 0.6483,
+        "algo": "lightgbm",
+        "run_id": "db5bf81df3b64c21b0d743a986c5a775",
+        "created_at": "2026-05-14 22:05:20.307769+00:00"
+      },
+      {
+        "name": "temp_2m_H3",
+        "variable": "temp_2m",
+        "horizon": 3,
+        "rmse": 0.6019,
+        "mae": 0.4858,
+        "algo": "lightgbm",
+        "run_id": "97bb626a5ba241fca18b7ff4e22e3d9d",
+        "created_at": "2026-05-14 22:04:32.138997+00:00"
+      },
+      {
+        "name": "temp_2m_H48",
+        "variable": "temp_2m",
+        "horizon": 48,
+        "rmse": 0.9135,
+        "mae": 0.739,
+        "algo": "lightgbm",
+        "run_id": "d96bf7d134ea4a63a35e6f460e1ef3c2",
+        "created_at": "2026-05-14 22:05:35.294280+00:00"
+      },
+      {
+        "name": "temp_2m_H6",
+        "variable": "temp_2m",
+        "horizon": 6,
+        "rmse": 0.6515,
+        "mae": 0.484,
+        "algo": "lightgbm",
+        "run_id": "cfc9d0bcad584033adb70bdff83b638f",
+        "created_at": "2026-05-14 22:04:45.750607+00:00"
+      },
+      {
+        "name": "temp_2m_H72",
+        "variable": "temp_2m",
+        "horizon": 72,
+        "rmse": 0.8413,
+        "mae": 0.6261,
+        "algo": "lightgbm",
+        "run_id": "7d0279e9ba09428bbb345b656cd4e6e8",
+        "created_at": "2026-05-14 22:05:50.153903+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H1",
+        "variable": "wind_speed_10m",
+        "horizon": 1,
+        "rmse": 0.4743,
+        "mae": 0.398,
+        "algo": "lightgbm",
+        "run_id": "49dc0bf10cac41bb92340974771e06f6",
+        "created_at": "2026-05-14 22:06:07.138730+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H12",
+        "variable": "wind_speed_10m",
+        "horizon": 12,
+        "rmse": 0.7632,
+        "mae": 0.5478,
+        "algo": "lightgbm",
+        "run_id": "8ceece1b7ec545fd988272f67401dc6f",
+        "created_at": "2026-05-14 22:06:51.750335+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H24",
+        "variable": "wind_speed_10m",
+        "horizon": 24,
+        "rmse": 0.6967,
+        "mae": 0.4874,
+        "algo": "lightgbm",
+        "run_id": "0835ccf1bb604a4f9f13c1238ac1e229",
+        "created_at": "2026-05-14 22:07:10.764922+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H3",
+        "variable": "wind_speed_10m",
+        "horizon": 3,
+        "rmse": 0.5184,
+        "mae": 0.4508,
+        "algo": "lightgbm",
+        "run_id": "14d5ce0eec924ec18f35d2fdc07ada66",
+        "created_at": "2026-05-14 22:06:23.142483+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H48",
+        "variable": "wind_speed_10m",
+        "horizon": 48,
+        "rmse": 0.8397,
+        "mae": 0.5875,
+        "algo": "lightgbm",
+        "run_id": "5d8c7faab05c4251a1ec7acb32089ad8",
+        "created_at": "2026-05-14 22:07:32.837495+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H6",
+        "variable": "wind_speed_10m",
+        "horizon": 6,
+        "rmse": 0.5471,
+        "mae": 0.4259,
+        "algo": "lightgbm",
+        "run_id": "79ad952f088d48b8a52868e71b4eee77",
+        "created_at": "2026-05-14 22:06:36.396168+00:00"
+      },
+      {
+        "name": "wind_speed_10m_H72",
+        "variable": "wind_speed_10m",
+        "horizon": 72,
+        "rmse": 0.9281,
+        "mae": 0.6374,
+        "algo": "lightgbm",
+        "run_id": "5ebd75bf4de542ee9a1690426c5295dd",
+        "created_at": "2026-05-14 22:07:47.075848+00:00"
+      }
+    ]
   },
   "dagshub": {
     "mlflow_url": "https://dagshub.com/zwiswamuridili990/weather-mlops-forecasts.mlflow",
