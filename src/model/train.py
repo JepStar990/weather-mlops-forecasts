@@ -30,11 +30,10 @@ def _setup_mlflow():
     if not (CFG.DAGSHUB_USERNAME and CFG.DAGSHUB_TOKEN and CFG.PUBLIC_REPO_NAME):
         logger.warning("DagsHub credentials missing; MLflow will use local filesystem.")
         return
-    os.environ["MLFLOW_TRACKING_USERNAME"] = CFG.DAGSHUB_USERNAME
-    os.environ["MLFLOW_TRACKING_PASSWORD"] = CFG.DAGSHUB_TOKEN
-    tracking_uri = f"https://dagshub.com/{CFG.DAGSHUB_USERNAME}/{CFG.PUBLIC_REPO_NAME}.mlflow"
-    mlflow.set_tracking_uri(tracking_uri)
-    import dagshub  # registers DagsHub artifact repository handler
+    import dagshub
+    dagshub.auth.add_app_token(CFG.DAGSHUB_TOKEN)
+    dagshub.init(repo_owner=CFG.DAGSHUB_USERNAME, repo_name=CFG.PUBLIC_REPO_NAME, mlflow=True)
+    mlflow.set_tracking_uri(f"https://dagshub.com/{CFG.DAGSHUB_USERNAME}/{CFG.PUBLIC_REPO_NAME}.mlflow")
     mlflow.set_experiment("weather-ensemble")
 
 def train_one(variable: str, horizon: int):
