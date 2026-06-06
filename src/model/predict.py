@@ -171,7 +171,7 @@ def main():
 
             model_feat_cols = []
             if model.metadata.signature and model.metadata.signature.inputs:
-                model_feat_cols = [c.name for c in model.metadata.signature.inputs.columns]
+                model_feat_cols = model.metadata.signature.inputs.input_names()
             if not model_feat_cols:
                 model_feat_cols = None
 
