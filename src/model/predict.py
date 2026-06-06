@@ -160,11 +160,10 @@ def main():
             if Xy is None or Xy.empty:
                 continue
 
-            run_id = champions[model_name]["run_id"]
             try:
-                model = mlflow.pyfunc.load_model(f"runs:/{run_id}/model")
+                model = mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
             except Exception as e:
-                logger.error("Failed to load %s (run_id=%s): %s; skipping", model_name, run_id, e)
+                logger.error("Failed to load %s: %s; skipping", model_name, e)
                 fail_count += 1
                 continue
 
