@@ -72,6 +72,7 @@ def mlflow_setup():
         os.environ["MLFLOW_TRACKING_PASSWORD"] = CFG.DAGSHUB_TOKEN
         tracking_uri = f"https://dagshub.com/{CFG.DAGSHUB_USERNAME}/{CFG.PUBLIC_REPO_NAME}.mlflow"
         mlflow.set_tracking_uri(tracking_uri)
+        import dagshub  # registers DagsHub artifact repository handler for model downloads
 
 
 def _sort_lag_cols(cols):

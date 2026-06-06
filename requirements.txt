@@ -6,6 +6,7 @@ SQLAlchemy
 psycopg2-binary
 meteostat==1.7.6
 mlflow
+dagshub
 scikit-learn
 lightgbm
 catboost
