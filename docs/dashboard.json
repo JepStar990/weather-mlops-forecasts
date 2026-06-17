@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-06-17T05:08:40.899011+00:00",
+  "updated_at": "2026-06-17T11:16:13.713579+00:00",
   "neon": {
     "row_counts": {
-      "forecasts": 286426,
-      "observations": 15633,
-      "errors": 85958,
-      "models": 417
+      "forecasts": 289327,
+      "observations": 15795,
+      "errors": 86396,
+      "models": 438
     },
     "errors_7d": [
       {
@@ -19,22 +19,22 @@
         "source": "met_no",
         "variable": "precipitation",
         "horizon_hours": 1,
-        "rmse": 0.127,
-        "mae": 0.045
+        "rmse": 0.128,
+        "mae": 0.046
       },
       {
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 1,
-        "rmse": 0.145,
-        "mae": 0.053
+        "rmse": 0.146,
+        "mae": 0.054
       },
       {
         "source": "openweather",
         "variable": "precipitation",
         "horizon_hours": 1,
-        "rmse": 0.375,
-        "mae": 0.154
+        "rmse": 0.368,
+        "mae": 0.151
       },
       {
         "source": "our_model",
@@ -47,78 +47,78 @@
         "source": "met_no",
         "variable": "precipitation",
         "horizon_hours": 3,
-        "rmse": 0.098,
-        "mae": 0.035
+        "rmse": 0.099,
+        "mae": 0.036
       },
       {
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 3,
-        "rmse": 0.164,
+        "rmse": 0.165,
         "mae": 0.06
       },
       {
         "source": "openweather",
         "variable": "precipitation",
         "horizon_hours": 3,
-        "rmse": 0.236,
-        "mae": 0.1
+        "rmse": 0.233,
+        "mae": 0.098
       },
       {
         "source": "met_no",
         "variable": "precipitation",
         "horizon_hours": 6,
-        "rmse": 0.079,
+        "rmse": 0.08,
         "mae": 0.028
       },
       {
         "source": "our_model",
         "variable": "precipitation",
         "horizon_hours": 6,
-        "rmse": 0.089,
+        "rmse": 0.09,
         "mae": 0.047
       },
       {
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 6,
-        "rmse": 0.146,
+        "rmse": 0.147,
         "mae": 0.053
       },
       {
         "source": "openweather",
         "variable": "precipitation",
         "horizon_hours": 6,
-        "rmse": 0.23,
-        "mae": 0.098
+        "rmse": 0.226,
+        "mae": 0.096
       },
       {
         "source": "our_model",
         "variable": "precipitation",
         "horizon_hours": 12,
-        "rmse": 0.057,
-        "mae": 0.026
+        "rmse": 0.06,
+        "mae": 0.027
       },
       {
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 12,
-        "rmse": 0.07,
-        "mae": 0.025
+        "rmse": 0.074,
+        "mae": 0.026
       },
       {
         "source": "met_no",
         "variable": "precipitation",
         "horizon_hours": 12,
-        "rmse": 0.084,
-        "mae": 0.03
+        "rmse": 0.089,
+        "mae": 0.032
       },
       {
         "source": "openweather",
         "variable": "precipitation",
         "horizon_hours": 12,
-        "rmse": 0.152,
-        "mae": 0.064
+        "rmse": 0.165,
+        "mae": 0.07
       },
       {
         "source": "our_model",
@@ -131,22 +131,22 @@
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 24,
-        "rmse": 0.072,
+        "rmse": 0.073,
         "mae": 0.027
       },
       {
         "source": "met_no",
         "variable": "precipitation",
         "horizon_hours": 24,
-        "rmse": 0.076,
+        "rmse": 0.077,
         "mae": 0.026
       },
       {
         "source": "openweather",
         "variable": "precipitation",
         "horizon_hours": 24,
-        "rmse": 0.281,
-        "mae": 0.103
+        "rmse": 0.291,
+        "mae": 0.107
       },
       {
         "source": "our_model",
@@ -173,183 +173,183 @@
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 48,
-        "rmse": 0.091,
+        "rmse": 0.09,
         "mae": 0.031
       },
       {
         "source": "our_model",
         "variable": "precipitation",
         "horizon_hours": 72,
-        "rmse": 0.043,
-        "mae": 0.017
+        "rmse": 0.044,
+        "mae": 0.018
       },
       {
         "source": "open_meteo",
         "variable": "precipitation",
         "horizon_hours": 72,
-        "rmse": 0.171,
-        "mae": 0.058
+        "rmse": 0.174,
+        "mae": 0.059
       },
       {
         "source": "openweather",
         "variable": "precipitation",
         "horizon_hours": 72,
-        "rmse": 0.242,
-        "mae": 0.113
+        "rmse": 0.251,
+        "mae": 0.117
       },
       {
         "source": "open_meteo",
         "variable": "temp_2m",
         "horizon_hours": 1,
-        "rmse": 1.469,
-        "mae": 1.104
+        "rmse": 1.484,
+        "mae": 1.116
       },
       {
         "source": "met_no",
         "variable": "temp_2m",
         "horizon_hours": 1,
-        "rmse": 1.539,
-        "mae": 1.221
+        "rmse": 1.554,
+        "mae": 1.232
       },
       {
         "source": "openweather",
         "variable": "temp_2m",
         "horizon_hours": 1,
-        "rmse": 2.284,
-        "mae": 1.81
+        "rmse": 2.272,
+        "mae": 1.804
       },
       {
         "source": "our_model",
         "variable": "temp_2m",
         "horizon_hours": 1,
-        "rmse": 3.216,
-        "mae": 2.54
+        "rmse": 3.272,
+        "mae": 2.588
       },
       {
         "source": "open_meteo",
         "variable": "temp_2m",
         "horizon_hours": 3,
-        "rmse": 1.519,
-        "mae": 1.137
+        "rmse": 1.537,
+        "mae": 1.152
       },
       {
         "source": "met_no",
         "variable": "temp_2m",
         "horizon_hours": 3,
-        "rmse": 1.579,
-        "mae": 1.239
+        "rmse": 1.6,
+        "mae": 1.258
       },
       {
         "source": "openweather",
         "variable": "temp_2m",
         "horizon_hours": 3,
-        "rmse": 3.101,
-        "mae": 2.581
+        "rmse": 3.087,
+        "mae": 2.571
       },
       {
         "source": "our_model",
         "variable": "temp_2m",
         "horizon_hours": 3,
-        "rmse": 3.529,
-        "mae": 2.839
+        "rmse": 3.588,
+        "mae": 2.886
       },
       {
         "source": "open_meteo",
         "variable": "temp_2m",
         "horizon_hours": 6,
-        "rmse": 1.469,
-        "mae": 1.093
+        "rmse": 1.483,
+        "mae": 1.105
       },
       {
         "source": "met_no",
         "variable": "temp_2m",
         "horizon_hours": 6,
+        "rmse": 1.537,
+        "mae": 1.206
+      },
+      {
+        "source": "openweather",
+        "variable": "temp_2m",
+        "horizon_hours": 6,
+        "rmse": 2.949,
+        "mae": 2.475
+      },
+      {
+        "source": "our_model",
+        "variable": "temp_2m",
+        "horizon_hours": 6,
+        "rmse": 4.214,
+        "mae": 3.418
+      },
+      {
+        "source": "open_meteo",
+        "variable": "temp_2m",
+        "horizon_hours": 12,
+        "rmse": 1.314,
+        "mae": 0.989
+      },
+      {
+        "source": "met_no",
+        "variable": "temp_2m",
+        "horizon_hours": 12,
+        "rmse": 1.315,
+        "mae": 1.041
+      },
+      {
+        "source": "openweather",
+        "variable": "temp_2m",
+        "horizon_hours": 12,
+        "rmse": 2.109,
+        "mae": 1.75
+      },
+      {
+        "source": "our_model",
+        "variable": "temp_2m",
+        "horizon_hours": 12,
+        "rmse": 4.099,
+        "mae": 3.325
+      },
+      {
+        "source": "open_meteo",
+        "variable": "temp_2m",
+        "horizon_hours": 24,
+        "rmse": 1.48,
+        "mae": 1.124
+      },
+      {
+        "source": "met_no",
+        "variable": "temp_2m",
+        "horizon_hours": 24,
+        "rmse": 1.489,
+        "mae": 1.176
+      },
+      {
+        "source": "openweather",
+        "variable": "temp_2m",
+        "horizon_hours": 24,
+        "rmse": 2.103,
+        "mae": 1.707
+      },
+      {
+        "source": "our_model",
+        "variable": "temp_2m",
+        "horizon_hours": 24,
+        "rmse": 3.301,
+        "mae": 2.614
+      },
+      {
+        "source": "open_meteo",
+        "variable": "temp_2m",
+        "horizon_hours": 48,
         "rmse": 1.524,
-        "mae": 1.196
-      },
-      {
-        "source": "openweather",
-        "variable": "temp_2m",
-        "horizon_hours": 6,
-        "rmse": 2.956,
-        "mae": 2.474
-      },
-      {
-        "source": "our_model",
-        "variable": "temp_2m",
-        "horizon_hours": 6,
-        "rmse": 4.162,
-        "mae": 3.375
-      },
-      {
-        "source": "open_meteo",
-        "variable": "temp_2m",
-        "horizon_hours": 12,
-        "rmse": 1.281,
-        "mae": 0.967
-      },
-      {
-        "source": "met_no",
-        "variable": "temp_2m",
-        "horizon_hours": 12,
-        "rmse": 1.282,
-        "mae": 1.014
-      },
-      {
-        "source": "openweather",
-        "variable": "temp_2m",
-        "horizon_hours": 12,
-        "rmse": 2.072,
-        "mae": 1.696
-      },
-      {
-        "source": "our_model",
-        "variable": "temp_2m",
-        "horizon_hours": 12,
-        "rmse": 4.029,
-        "mae": 3.268
-      },
-      {
-        "source": "open_meteo",
-        "variable": "temp_2m",
-        "horizon_hours": 24,
-        "rmse": 1.468,
-        "mae": 1.117
-      },
-      {
-        "source": "met_no",
-        "variable": "temp_2m",
-        "horizon_hours": 24,
-        "rmse": 1.476,
-        "mae": 1.167
-      },
-      {
-        "source": "openweather",
-        "variable": "temp_2m",
-        "horizon_hours": 24,
-        "rmse": 2.046,
-        "mae": 1.652
-      },
-      {
-        "source": "our_model",
-        "variable": "temp_2m",
-        "horizon_hours": 24,
-        "rmse": 3.277,
-        "mae": 2.593
-      },
-      {
-        "source": "open_meteo",
-        "variable": "temp_2m",
-        "horizon_hours": 48,
-        "rmse": 1.506,
-        "mae": 1.14
+        "mae": 1.151
       },
       {
         "source": "met_no",
         "variable": "temp_2m",
         "horizon_hours": 48,
-        "rmse": 1.525,
-        "mae": 1.217
+        "rmse": 1.541,
+        "mae": 1.228
       },
       {
         "source": "openweather",
@@ -364,118 +364,118 @@
         "variable": "precipitation",
         "horizon_hours": 1,
         "best_source": "our_model",
-        "rmse": 0.06626338728754896,
-        "mae": 0.03496069150337801,
-        "mape": 17520.65695438183,
-        "n": 327
+        "rmse": 0.066380966259317,
+        "mae": 0.03488138980895952,
+        "mape": 17334.03197043106,
+        "n": 325
       },
       {
         "variable": "precipitation",
         "horizon_hours": 3,
         "best_source": "our_model",
-        "rmse": 0.05512136470782748,
-        "mae": 0.02866389657027773,
-        "mape": 14153.588598721079,
-        "n": 322
+        "rmse": 0.05542698757183184,
+        "mae": 0.028752799214876078,
+        "mape": 14119.2569499748,
+        "n": 320
       },
       {
         "variable": "precipitation",
         "horizon_hours": 6,
         "best_source": "met_no",
-        "rmse": 0.07930635189077404,
-        "mae": 0.027742616033755278,
-        "mape": 12693.403027033302,
-        "n": 316
+        "rmse": 0.07991764500260487,
+        "mae": 0.027954706298655346,
+        "mape": 12774.252904770068,
+        "n": 314
       },
       {
         "variable": "precipitation",
         "horizon_hours": 12,
         "best_source": "our_model",
-        "rmse": 0.057208412897482214,
-        "mae": 0.026080258074469915,
-        "mape": 11719.738090239183,
-        "n": 336
+        "rmse": 0.05982107526471001,
+        "mae": 0.02708281834703071,
+        "mape": 11909.438741051074,
+        "n": 318
       },
       {
         "variable": "precipitation",
         "horizon_hours": 24,
         "best_source": "our_model",
-        "rmse": 0.06054563033426258,
-        "mae": 0.02806667031100297,
-        "mape": 13114.893576055663,
-        "n": 340
+        "rmse": 0.060972544539485356,
+        "mae": 0.028262718022136545,
+        "mape": 13191.475778989168,
+        "n": 338
       },
       {
         "variable": "precipitation",
         "horizon_hours": 48,
         "best_source": "our_model",
-        "rmse": 0.055880858624022346,
-        "mae": 0.023352903141781914,
-        "mape": 9405.68674338199,
-        "n": 337
+        "rmse": 0.05576413334496772,
+        "mae": 0.023320091523262244,
+        "mape": 9382.49628388742,
+        "n": 338
       },
       {
         "variable": "precipitation",
         "horizon_hours": 72,
         "best_source": "our_model",
-        "rmse": 0.04291800651206502,
-        "mae": 0.017150034168656975,
-        "mape": 5493.947572605004,
-        "n": 334
+        "rmse": 0.04370870659905182,
+        "mae": 0.017531862760058133,
+        "mape": 5666.599279680285,
+        "n": 329
       },
       {
         "variable": "temp_2m",
         "horizon_hours": 1,
         "best_source": "open_meteo",
-        "rmse": 1.4689571188585986,
-        "mae": 1.104112466124661,
-        "mape": 0.1320571832693244,
-        "n": 328
+        "rmse": 1.4836042188061387,
+        "mae": 1.1159645535105658,
+        "mape": 0.13363339648025083,
+        "n": 326
       },
       {
         "variable": "temp_2m",
         "horizon_hours": 3,
         "best_source": "open_meteo",
-        "rmse": 1.5188650204953336,
-        "mae": 1.137210144927536,
-        "mape": 0.14442239973175597,
-        "n": 322
+        "rmse": 1.5372778702595098,
+        "mae": 1.1524774305555554,
+        "mape": 0.14632437149587502,
+        "n": 320
       },
       {
         "variable": "temp_2m",
         "horizon_hours": 6,
         "best_source": "open_meteo",
-        "rmse": 1.4690593935763228,
-        "mae": 1.0931675213675214,
-        "mape": 0.15220334940620284,
-        "n": 325
+        "rmse": 1.483449610246782,
+        "mae": 1.1051995184038528,
+        "mape": 0.15393713262127004,
+        "n": 323
       },
       {
         "variable": "temp_2m",
         "horizon_hours": 12,
         "best_source": "open_meteo",
-        "rmse": 1.2807718628011657,
-        "mae": 0.9673544973544973,
-        "mape": 0.11893808677470567,
-        "n": 336
+        "rmse": 1.3141995644209705,
+        "mae": 0.9894758909853248,
+        "mape": 0.1232245242415883,
+        "n": 318
       },
       {
         "variable": "temp_2m",
         "horizon_hours": 24,
         "best_source": "open_meteo",
-        "rmse": 1.4678339804742464,
-        "mae": 1.1165548882215548,
-        "mape": 0.12295809715822525,
-        "n": 333
+        "rmse": 1.479871318292002,
+        "mae": 1.1240399462907016,
+        "mape": 0.12432127402297569,
+        "n": 331
       },
       {
         "variable": "temp_2m",
         "horizon_hours": 48,
         "best_source": "open_meteo",
-        "rmse": 1.5061246994688258,
-        "mae": 1.1395454545454546,
-        "mape": 0.1223112570193707,
-        "n": 330
+        "rmse": 1.5243518250400525,
+        "mae": 1.1513763007720712,
+        "mape": 0.12333344436830551,
+        "n": 331
       },
       {
         "variable": "temp_2m",
@@ -490,55 +490,55 @@
         "variable": "wind_speed_10m",
         "horizon_hours": 1,
         "best_source": "our_model",
-        "rmse": 1.534779725041143,
-        "mae": 1.1873418567094498,
-        "mape": 50615.58290761369,
-        "n": 327
+        "rmse": 1.5441549496210518,
+        "mae": 1.1960272114346027,
+        "mape": 50927.07257822895,
+        "n": 325
       },
       {
         "variable": "wind_speed_10m",
         "horizon_hours": 3,
         "best_source": "openweather",
-        "rmse": 1.415851663451647,
-        "mae": 1.1377652228499686,
-        "mape": 51130.589616018355,
-        "n": 118
+        "rmse": 1.412438905251332,
+        "mae": 1.131856911556365,
+        "mape": 49454.19836282146,
+        "n": 122
       },
       {
         "variable": "wind_speed_10m",
         "horizon_hours": 6,
         "best_source": "open_meteo",
-        "rmse": 1.5800648284694285,
-        "mae": 1.2887187084520417,
-        "mape": 47292.92553870394,
-        "n": 325
+        "rmse": 1.5907093849055485,
+        "mae": 1.2961036578374039,
+        "mape": 47585.7653356209,
+        "n": 323
       },
       {
         "variable": "wind_speed_10m",
         "horizon_hours": 12,
-        "best_source": "open_meteo",
-        "rmse": 1.6013892449114218,
-        "mae": 1.2834866622574956,
-        "mape": 22996.600987947026,
-        "n": 336
+        "best_source": "our_model",
+        "rmse": 1.6327364104486917,
+        "mae": 1.242731107511119,
+        "mape": 23745.417960198472,
+        "n": 318
       },
       {
         "variable": "wind_speed_10m",
         "horizon_hours": 24,
         "best_source": "open_meteo",
-        "rmse": 1.5424202585897995,
-        "mae": 1.2407975938901865,
-        "mape": 33707.58462961392,
-        "n": 333
+        "rmse": 1.5557616586534138,
+        "mae": 1.248886408563649,
+        "mape": 33911.26445145076,
+        "n": 331
       },
       {
         "variable": "wind_speed_10m",
         "horizon_hours": 48,
         "best_source": "open_meteo",
-        "rmse": 1.5802838526898644,
-        "mae": 1.2692833894500561,
-        "mape": 21913.04644401952,
-        "n": 330
+        "rmse": 1.579816971345875,
+        "mae": 1.265162246838984,
+        "mape": 21846.84903837844,
+        "n": 331
       },
       {
         "variable": "wind_speed_10m",
@@ -745,11 +745,11 @@
         "name": "wind_speed_10m_H48",
         "variable": "wind_speed_10m",
         "horizon": 48,
-        "rmse": 0.8397,
-        "mae": 0.5875,
+        "rmse": 0.595,
+        "mae": 0.5058,
         "algo": "lightgbm",
-        "run_id": "5d8c7faab05c4251a1ec7acb32089ad8",
-        "created_at": "2026-05-14 22:07:32.837495+00:00"
+        "run_id": "4b5a796be36c4c55a39a35266da6d377",
+        "created_at": "2026-06-17 05:25:27.642911+00:00"
       },
       {
         "name": "wind_speed_10m_H6",
