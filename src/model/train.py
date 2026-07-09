@@ -143,12 +143,6 @@ def train_one(variable: str, horizon: int):
             registered_model_name=model_name,
             signature=signature,
             input_example=input_example,
-            skops_trusted_types=[
-                "collections.OrderedDict",
-                "lightgbm.basic.Booster",
-                "lightgbm.sklearn.LGBMRegressor",
-                "numpy.dtype",
-            ],
         )
 
         # Store this model row immediately so promote can work on it
