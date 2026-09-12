@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-09-11T20:54:55.593054+00:00",
+  "updated_at": "2026-09-12T04:27:30.789364+00:00",
   "neon": {
     "row_counts": {
       "forecasts": 0,
-      "observations": 41796,
-      "errors": 604314,
+      "observations": 41148,
+      "errors": 599532,
       "models": 1257
     },
     "errors_7d": [],
